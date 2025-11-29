@@ -19,6 +19,7 @@
             --card-bg: #ffffff;
             --shadow: 0 8px 20px rgba(255, 154, 158, 0.2);
             --radius: 16px;
+            --nav-height: 60px;
         }
 
         body {
@@ -28,62 +29,65 @@
             background-size: 20px 20px;
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 0; /* 移除body padding，由container控制 */
             line-height: 1.6;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding-bottom: 50px;
+            padding: 20px 20px 80px 20px; /* 底部留出导航栏高度 */
         }
 
         /* 头部样式 */
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             background: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
-            padding: 20px;
+            padding: 15px;
             border-radius: var(--radius);
             color: white;
             box-shadow: var(--shadow);
         }
 
-        header h1 { margin: 0 0 10px 0; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        header h1 { margin: 0 0 5px 0; font-size: 1.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
 
         .date-wrapper {
             display: inline-flex;
             align-items: center;
             background: rgba(255,255,255,0.25);
-            padding: 5px 15px;
+            padding: 4px 12px;
             border-radius: 20px;
             backdrop-filter: blur(5px);
         }
 
-        /* 修复：使用ID选择器提高优先级，防止被全局样式覆盖导致白字白底 */
         #dateInput {
             background: transparent;
             border: none;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-family: inherit;
             cursor: pointer;
             outline: none;
-            width: auto; /* 防止被全局width:100%拉伸 */
+            width: auto;
             box-shadow: none;
         }
-        /* 修改日期选择器图标颜色为白色 */
         #dateInput::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-        
-        .weekday-display { margin-left: 10px; font-weight: bold; }
+        .weekday-display { margin-left: 10px; font-weight: bold; font-size: 0.9rem; }
+
+        /* 视图切换控制 */
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* 卡片通用样式 */
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
             box-shadow: var(--shadow);
             border: 2px solid white;
         }
@@ -91,7 +95,7 @@
         .section-title {
             font-size: 1.1rem;
             color: var(--primary-color);
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             font-weight: bold;
@@ -102,25 +106,26 @@
         }
 
         /* 表单元素 */
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-        .input-group { flex: 1; min-width: 200px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #666; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 100%; } /* 手机端默认全宽 */
+        @media(min-width: 600px) { .input-group { min-width: 200px; } }
+        
+        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #666; }
 
-        /* 全局输入框样式 */
-        input[type="text"], input[type="number"], input[type="time"], input[type="date"], input[type="month"], input[type="week"] {
+        input[type="text"], input[type="number"], input[type="time"], input[type="date"], select {
             width: 100%; padding: 10px; border: 2px solid #eee;
             border-radius: 10px; font-size: 1rem; outline: none;
             transition: border-color 0.3s; box-sizing: border-box;
             background: white;
         }
-        input:focus { border-color: var(--primary-color); }
+        input:focus, select:focus { border-color: var(--primary-color); }
 
         /* 单选/多选按钮组 */
         .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .radio-label { cursor: pointer; position: relative; }
         .radio-label input { display: none; }
         .radio-label span {
-            display: inline-block; padding: 6px 14px; background: #f0f0f0;
+            display: inline-block; padding: 6px 12px; background: #f0f0f0;
             border-radius: 20px; font-size: 0.85rem; transition: all 0.3s;
             border: 2px solid transparent;
         }
@@ -129,61 +134,84 @@
             border-color: var(--primary-color); font-weight: bold;
         }
 
-        /* 动态列表通用样式 */
-        .dynamic-list { display: flex; flex-direction: column; gap: 10px; }
+        /* 动态列表 */
+        .dynamic-list { display: flex; flex-direction: column; gap: 8px; min-height: 10px; } /* min-height 方便空列表拖入 */
         .dynamic-row {
-            display: flex; gap: 8px; align-items: center;
+            display: flex; gap: 5px; align-items: center;
             background: #f9f9f9; padding: 8px; border-radius: 8px;
             border: 1px solid #eee; transition: background 0.2s;
+            position: relative; /* 为拖拽定位做准备 */
         }
-        .dynamic-row:hover { background: #fff5f5; }
         
+        /* 拖拽相关样式 */
         .drag-handle {
-            cursor: move; color: #ccc; font-size: 1.2rem; padding: 0 5px;
-            user-select: none; touch-action: none;
+            cursor: move; color: #ccc; font-size: 1.4rem; padding: 0 8px;
+            user-select: none; touch-action: none; /* 关键：禁止默认触摸行为 */
         }
-        .drag-handle:hover { color: var(--primary-color); }
-
-        .row-time { width: 110px; }
-        .row-val { width: 100px; }
-        .row-name { flex: 2; }
-        .row-spec { flex: 1; }
-
-        .btn-icon {
-            background: none; border: none; cursor: pointer;
-            font-size: 1.1rem; padding: 5px; color: #999;
+        .drag-handle:active { color: var(--primary-color); }
+        
+        /* 拖拽时的幽灵元素样式 */
+        .dragging-clone {
+            position: fixed; z-index: 9999; background: white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0.9;
+            pointer-events: none; border: 2px solid var(--primary-color);
+            border-radius: 8px; padding: 8px; width: 90%; max-width: 350px;
         }
-        .btn-icon:hover { transform: scale(1.1); }
+        
+        .med-section {
+            background: #fff9fa; border-radius: 12px; padding: 10px;
+            margin-bottom: 10px; border: 1px dashed var(--primary-color);
+            transition: all 0.2s;
+        }
+        .med-section.drag-over { background: #ffe0e0; border-style: solid; transform: scale(1.02); }
+        .med-time-title { font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9rem; }
+
+        /* 输入框宽度微调 */
+        .row-time { width: 90px; }
+        .row-val { width: 80px; }
+        .row-name { flex: 2; min-width: 80px; }
+        .row-qty { width: 60px; text-align: center; }
+        .row-unit { width: 65px; padding: 10px 2px; }
+
+        .btn-icon { background: none; border: none; font-size: 1.1rem; padding: 5px; color: #999; }
         .btn-del { color: #FF5252; }
         .btn-copy { color: #2196F3; }
-
         .btn-add-row {
             background: white; border: 1px dashed #ccc; width: 100%;
-            padding: 8px; border-radius: 8px; color: #888; cursor: pointer;
-            margin-top: 8px; font-size: 0.9rem;
+            padding: 8px; border-radius: 8px; color: #888; margin-top: 5px; font-size: 0.9rem;
         }
-        .btn-add-row:hover { border-color: var(--primary-color); color: var(--primary-color); }
-
-        .med-section {
-            background: #fff9fa; border-radius: 12px; padding: 12px;
-            margin-bottom: 12px; border: 1px dashed var(--primary-color);
-        }
-        .med-section.drag-over { background: #ffe0e0; border-style: solid; }
-        .med-time-title { font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9rem; }
 
         .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .save-btn {
             flex: 2; padding: 15px; border: none; border-radius: 50px;
             background: linear-gradient(to right, #ff9a9e 0%, #fecfef 100%);
-            color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            color: white; font-size: 1.1rem; font-weight: bold;
             box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
         }
         .cancel-btn {
             flex: 1; padding: 15px; background: #e0e0e0; border: none;
-            border-radius: 50px; color: #666; font-weight: bold; cursor: pointer; display: none;
+            border-radius: 50px; color: #666; font-weight: bold; display: none;
         }
 
-        /* 筛选栏美化 */
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            height: var(--nav-height); background: white;
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+        }
+        .nav-item {
+            flex: 1; text-align: center; color: #999;
+            font-size: 0.8rem; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary-color); font-weight: bold; }
+        .nav-item.active .nav-icon { transform: scale(1.1); transition: transform 0.2s; }
+
+        /* 历史记录筛选栏 */
         .filter-bar {
             display: flex; gap: 10px; margin-bottom: 15px;
             background: rgba(255, 255, 255, 0.8); 
@@ -191,36 +219,17 @@
             border: 2px solid white;
             box-shadow: 0 4px 15px rgba(255, 154, 158, 0.1);
         }
-
         .filter-select, .filter-input {
-            flex: 1;
-            border: 2px solid #FECFEF;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 0.95rem;
-            color: #666;
-            outline: none;
-            background-color: white;
-            transition: all 0.3s;
-            cursor: pointer;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+            flex: 1; border: 2px solid #FECFEF; border-radius: 20px;
+            padding: 8px 15px; font-size: 0.9rem; color: #666;
+            background-color: white; outline: none;
+            -webkit-appearance: none; appearance: none;
         }
-
         .filter-select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FF9A9E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 16px;
-            padding-right: 30px;
+            background-repeat: no-repeat; background-position: right 10px center;
+            background-size: 16px; padding-right: 30px;
         }
-
-        .filter-select:focus, .filter-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(255, 154, 158, 0.2);
-        }
-
         .filter-input { flex: 2; }
 
         .history-item {
@@ -232,17 +241,9 @@
             border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;
         }
         .history-date { font-weight: bold; color: var(--accent-color); }
-        .history-actions span {
-            cursor: pointer; font-size: 0.85rem; margin-left: 10px;
-            padding: 2px 8px; border-radius: 4px; background: #f5f5f5;
-        }
-
+        
         details { margin-top: 8px; background: #f9f9f9; border-radius: 8px; overflow: hidden; }
-        summary {
-            padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: #666;
-            font-weight: bold; user-select: none; outline: none;
-            display: flex; align-items: center;
-        }
+        summary { padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: #666; font-weight: bold; display: flex; align-items: center; outline: none; }
         summary::after { content: '▼'; font-size: 0.7rem; margin-left: auto; transition: transform 0.2s; }
         details[open] summary::after { transform: rotate(180deg); }
         .details-content { padding: 10px 12px; border-top: 1px solid #eee; font-size: 0.9rem; color: #555; }
@@ -254,26 +255,15 @@
         .tag-neutral { background-color: #9E9E9E; }
         .tag-trend { background-color: #2196F3; }
 
-        .backup-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px dashed #eee;
-            text-align: center;
-        }
+        .backup-section { text-align: center; padding: 20px; }
         .backup-btn {
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid #ccc;
-            background: white;
-            color: #666;
-            cursor: pointer;
-            margin: 0 5px;
-            font-size: 0.9rem;
+            padding: 12px 25px; border-radius: 25px; border: 1px solid #ccc;
+            background: white; color: #666; margin: 10px; font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .backup-btn:hover { background: #f5f5f5; color: var(--primary-color); border-color: var(--primary-color); }
 
         .toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
             border-radius: 20px; display: none; z-index: 1000;
         }
@@ -285,114 +275,110 @@
     <header>
         <h1>🐾 萌宠健康日记</h1>
         <div class="date-wrapper">
-            <!-- 修复：onchange 事件触发 checkLogForDate -->
             <input type="date" id="dateInput" onchange="onDateChange()">
             <span id="weekdayDisplay" class="weekday-display"></span>
         </div>
     </header>
 
-    <form id="petForm">
-        <!-- 1. 体温与体重 -->
-        <div class="card">
-            <div class="section-title">今日体征</div>
-            
-            <div class="form-row">
+    <!-- Tab 1: 今日打卡 -->
+    <div id="tab-record" class="tab-content active">
+        <form id="petForm">
+            <!-- 1. 体温与体重 -->
+            <div class="card">
+                <div class="section-title">今日体征</div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>⚖️ 体重 (kg)</label>
+                        <input type="number" step="0.01" id="weight" placeholder="例如: 5.2">
+                    </div>
+                </div>
                 <div class="input-group">
-                    <label>⚖️ 体重 (kg)</label>
-                    <input type="number" step="0.01" id="weight" placeholder="例如: 5.2">
+                    <label>🌡️ 体温记录 (可多次)</label>
+                    <div id="temp-list" class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addTempRow()">+ 添加体温记录</button>
                 </div>
             </div>
 
-            <div class="input-group">
-                <label>🌡️ 体温记录 (可多次)</label>
-                <div id="temp-list" class="dynamic-list"></div>
-                <button type="button" class="btn-add-row" onclick="addTempRow()">+ 添加体温记录</button>
-            </div>
-        </div>
-
-        <!-- 2. 状态勾选 -->
-        <div class="card">
-            <div class="section-title">状态记录</div>
-            
-            <div class="form-row">
-                <div class="input-group">
-                    <label>💩 大便状态</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="stool" value="正常"><span>正常</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="无便"><span>无便</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="软便"><span>软便</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="拉稀"><span>拉稀</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="便血"><span>便血</span></label>
+            <!-- 2. 状态勾选 -->
+            <div class="card">
+                <div class="section-title">状态记录</div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>💩 大便状态</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="stool" value="正常"><span>正常</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="无便"><span>无便</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="软便"><span>软便</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="拉稀"><span>拉稀</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="便血"><span>便血</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>🧠 精神状态</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="mental" value="良好"><span>良好 ☀️</span></label>
+                            <label class="radio-label"><input type="radio" name="mental" value="一般"><span>一般 ☁️</span></label>
+                            <label class="radio-label"><input type="radio" name="mental" value="不佳"><span>不佳 🌧️</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>🍖 食欲情况</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="appetite" value="多食"><span>多食 🍗</span></label>
+                            <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
+                            <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
+                        </div>
+                        <div class="radio-group" style="margin-top: 8px;">
+                            <label class="radio-label"><input type="checkbox" name="appetite_trend" value="上升"><span>📈 上升</span></label>
+                            <label class="radio-label"><input type="checkbox" name="appetite_trend" value="下降"><span>📉 下降</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>📝 特殊情况 (选填)</label>
+                        <input type="text" id="special" placeholder="例如: 呕吐、咳嗽等备注">
                     </div>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label>🧠 精神状态</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="mental" value="良好"><span>良好 ☀️</span></label>
-                        <label class="radio-label"><input type="radio" name="mental" value="一般"><span>一般 ☁️</span></label>
-                        <label class="radio-label"><input type="radio" name="mental" value="不佳"><span>不佳 🌧️</span></label>
-                    </div>
+            <!-- 3. 用药记录 -->
+            <div class="card">
+                <div class="section-title">💊 用药打卡 (长按拖拽)</div>
+                <datalist id="med-history-list"></datalist>
+
+                <div class="med-section" id="med-morning">
+                    <div class="med-time-title">🌅 早上</div>
+                    <div class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addMedRow('med-morning')">+ 添加药品</button>
+                </div>
+
+                <div class="med-section" id="med-noon">
+                    <div class="med-time-title">☀️ 中午</div>
+                    <div class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addMedRow('med-noon')">+ 添加药品</button>
+                </div>
+
+                <div class="med-section" id="med-evening">
+                    <div class="med-time-title">🌙 晚上</div>
+                    <div class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addMedRow('med-evening')">+ 添加药品</button>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label>🍖 食欲情况</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="appetite" value="多食"><span>多食 🍗</span></label>
-                        <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
-                        <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
-                    </div>
-                    <div class="radio-group" style="margin-top: 8px;">
-                        <label class="radio-label"><input type="checkbox" name="appetite_trend" value="上升"><span>📈 上升</span></label>
-                        <label class="radio-label"><input type="checkbox" name="appetite_trend" value="下降"><span>📉 下降</span></label>
-                    </div>
-                </div>
+            <div class="action-buttons">
+                <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm(true)">取消编辑</button>
+                <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
             </div>
+        </form>
+    </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label>📝 特殊情况 (选填)</label>
-                    <input type="text" id="special" placeholder="例如: 呕吐、咳嗽等备注">
-                </div>
-            </div>
-        </div>
-
-        <!-- 3. 用药记录 -->
-        <div class="card">
-            <div class="section-title">💊 用药打卡 (可拖拽调整)</div>
-            <datalist id="med-history-list"></datalist>
-
-            <div class="med-section" id="med-morning" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <div class="med-time-title">🌅 早上</div>
-                <div class="dynamic-list"></div>
-                <button type="button" class="btn-add-row" onclick="addMedRow('med-morning')">+ 添加药品</button>
-            </div>
-
-            <div class="med-section" id="med-noon" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <div class="med-time-title">☀️ 中午</div>
-                <div class="dynamic-list"></div>
-                <button type="button" class="btn-add-row" onclick="addMedRow('med-noon')">+ 添加药品</button>
-            </div>
-
-            <div class="med-section" id="med-evening" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <div class="med-time-title">🌙 晚上</div>
-                <div class="dynamic-list"></div>
-                <button type="button" class="btn-add-row" onclick="addMedRow('med-evening')">+ 添加药品</button>
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm(true)">取消编辑</button>
-            <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
-        </div>
-    </form>
-
-    <!-- 历史记录 -->
-    <div class="history-container">
+    <!-- Tab 2: 历史记录 -->
+    <div id="tab-history" class="tab-content">
         <div class="section-title">📅 历史记录</div>
         <div class="filter-bar">
             <select id="filterType" class="filter-select" onchange="toggleFilterInputs()">
@@ -408,12 +394,37 @@
         <div id="historyList"></div>
     </div>
 
-    <div class="backup-section">
-        <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份</button>
-        <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份</button>
-        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
+    <!-- Tab 3: 备份设置 -->
+    <div id="tab-settings" class="tab-content">
+        <div class="card">
+            <div class="section-title">⚙️ 数据管理</div>
+            <p style="color:#666; font-size:0.9rem; text-align:center;">数据存储在本地，请定期备份防止丢失。</p>
+            <div class="backup-section">
+                <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份文件</button>
+                <br>
+                <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份文件</button>
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
+            </div>
+        </div>
     </div>
+
 </div>
+
+<!-- 底部导航栏 -->
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('tab-record', this)">
+        <div class="nav-icon">📝</div>
+        <div>打卡</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-history', this)">
+        <div class="nav-icon">📅</div>
+        <div>历史</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-settings', this)">
+        <div class="nav-icon">⚙️</div>
+        <div>备份</div>
+    </div>
+</nav>
 
 <div class="toast" id="toast">记录已保存! 🐾</div>
 
@@ -421,10 +432,25 @@
     let currentEditId = null;
     let draggedItem = null;
 
+    // --- 视图切换 ---
+    function switchTab(tabId, navEl) {
+        // 切换内容
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        
+        // 切换导航状态
+        if(navEl) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            navEl.classList.add('active');
+        }
+        
+        // 切换到顶部
+        window.scrollTo(0, 0);
+    }
+
     // --- 初始化与日期 ---
     function initDate() {
         const now = new Date();
-        // 解决时区问题：使用本地时间构建字符串
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
@@ -432,7 +458,7 @@
         
         document.getElementById('dateInput').value = todayStr;
         updateWeekday();
-        checkLogForDate(todayStr); // 初始化时检查今天是否有记录
+        checkLogForDate(todayStr);
     }
 
     function onDateChange() {
@@ -446,25 +472,21 @@
         const display = document.getElementById('weekdayDisplay');
         if (!dateInput.value) { display.textContent = ''; return; }
         
-        // 修复：直接解析字符串避免时区偏差
         const parts = dateInput.value.split('-');
         const date = new Date(parts[0], parts[1] - 1, parts[2]); 
         const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
         display.textContent = days[date.getDay()];
     }
 
-    // --- 核心功能：切换日期自动加载数据 ---
     function checkLogForDate(dateStr) {
         const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
         const existingLog = logs.find(l => l.dateStr === dateStr);
 
         if (existingLog) {
-            // 如果该日期有记录，自动进入编辑模式
-            editLog(existingLog.id, false); // false 表示不滚动页面
+            editLog(existingLog.id, false);
             showToast("已加载该日记录 📖");
         } else {
-            // 如果该日期无记录，重置表单（但保留日期）
-            resetForm(false); // false 表示不重置日期
+            resetForm(false);
         }
     }
 
@@ -480,7 +502,7 @@
         });
     }
 
-    function saveMedToHistory(name) {
+    function saveMedToHistory(name, qty, unit) {
         if(!name) return;
         let history = JSON.parse(localStorage.getItem('medHistory') || '[]');
         if (!history.includes(name)) {
@@ -488,9 +510,27 @@
             localStorage.setItem('medHistory', JSON.stringify(history));
             updateMedDatalist();
         }
+        let lastSpecs = JSON.parse(localStorage.getItem('medLastSpecs') || '{}');
+        lastSpecs[name] = { qty: qty, unit: unit };
+        localStorage.setItem('medLastSpecs', JSON.stringify(lastSpecs));
     }
 
-    // --- 拖拽逻辑 ---
+    function autoFillSpec(input) {
+        const name = input.value;
+        const lastSpecs = JSON.parse(localStorage.getItem('medLastSpecs') || '{}');
+        if (lastSpecs[name]) {
+            const row = input.parentElement;
+            const qtyInput = row.querySelector('.row-qty');
+            const unitInput = row.querySelector('.row-unit');
+            if (qtyInput && unitInput) {
+                qtyInput.value = lastSpecs[name].qty || '';
+                unitInput.value = lastSpecs[name].unit || 'ml';
+            }
+        }
+    }
+
+    // --- 拖拽逻辑 (PC + Mobile) ---
+    // PC Drag
     function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
     function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
     function drag(ev) { draggedItem = ev.target.closest('.dynamic-row'); ev.dataTransfer.effectAllowed = "move"; }
@@ -501,6 +541,86 @@
         const list = section.querySelector('.dynamic-list');
         if (draggedItem && list) { list.appendChild(draggedItem); draggedItem = null; }
     }
+
+    // Mobile Touch Drag (自定义实现)
+    let touchClone = null;
+    let touchSrcItem = null;
+    let touchOffsetX = 0;
+    let touchOffsetY = 0;
+
+    function initTouchDrag(handle) {
+        handle.addEventListener('touchstart', handleTouchStart, {passive: false});
+        handle.addEventListener('touchmove', handleTouchMove, {passive: false});
+        handle.addEventListener('touchend', handleTouchEnd);
+    }
+
+    function handleTouchStart(e) {
+        e.preventDefault(); // 防止滚动
+        const touch = e.touches[0];
+        touchSrcItem = e.target.closest('.dynamic-row');
+        
+        // 创建克隆体
+        touchClone = touchSrcItem.cloneNode(true);
+        touchClone.classList.add('dragging-clone');
+        
+        // 计算偏移量，让手指按在克隆体相对位置
+        const rect = touchSrcItem.getBoundingClientRect();
+        touchOffsetX = touch.clientX - rect.left;
+        touchOffsetY = touch.clientY - rect.top;
+
+        // 设置初始位置
+        touchClone.style.left = (rect.left) + 'px';
+        touchClone.style.top = (rect.top) + 'px';
+        touchClone.style.width = rect.width + 'px';
+        
+        document.body.appendChild(touchClone);
+        touchSrcItem.style.opacity = '0.3'; // 原元素变半透明
+    }
+
+    function handleTouchMove(e) {
+        if (!touchClone) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        
+        // 移动克隆体
+        touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+        touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+
+        // 检测下方元素高亮
+        document.querySelectorAll('.med-section').forEach(sec => sec.classList.remove('drag-over'));
+        // 临时隐藏克隆体以检测下方元素
+        touchClone.style.display = 'none';
+        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        touchClone.style.display = 'block';
+
+        if (elemBelow) {
+            const section = elemBelow.closest('.med-section');
+            if (section) section.classList.add('drag-over');
+        }
+    }
+
+    function handleTouchEnd(e) {
+        if (!touchClone) return;
+        const touch = e.changedTouches[0];
+        
+        // 查找放置目标
+        touchClone.style.display = 'none';
+        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const section = elemBelow ? elemBelow.closest('.med-section') : null;
+        
+        if (section) {
+            const list = section.querySelector('.dynamic-list');
+            list.appendChild(touchSrcItem);
+            section.classList.remove('drag-over');
+        }
+
+        // 清理
+        document.body.removeChild(touchClone);
+        touchSrcItem.style.opacity = '1';
+        touchClone = null;
+        touchSrcItem = null;
+    }
+
 
     // --- 动态行操作 ---
     function addTempRow(time = '', val = '') {
@@ -519,7 +639,7 @@
         container.appendChild(div);
     }
 
-    function addMedRow(containerId, name = '', spec = '') {
+    function addMedRow(containerId, name = '', qty = '', unit = 'ml') {
         const container = document.querySelector(`#${containerId} .dynamic-list`);
         const div = document.createElement('div');
         div.className = 'dynamic-row';
@@ -527,20 +647,31 @@
         div.ondragstart = drag;
         div.innerHTML = `
             <span class="drag-handle">⋮⋮</span>
-            <input type="text" class="row-name" list="med-history-list" placeholder="药品名称" value="${name}">
-            <input type="text" class="row-spec" placeholder="规格" value="${spec}">
+            <input type="text" class="row-name" list="med-history-list" placeholder="药品名称" value="${name}" oninput="autoFillSpec(this)">
+            <input type="number" step="0.1" class="row-qty" placeholder="量" value="${qty}">
+            <select class="row-unit">
+                <option value="ml" ${unit==='ml'?'selected':''}>ml</option>
+                <option value="管" ${unit==='管'?'selected':''}>管</option>
+                <option value="粒" ${unit==='粒'?'selected':''}>粒</option>
+                <option value="颗" ${unit==='颗'?'selected':''}>颗</option>
+                <option value="片" ${unit==='片'?'selected':''}>片</option>
+            </select>
             <button type="button" class="btn-icon btn-copy" onclick="duplicateMedRow(this)">📋</button>
             <button type="button" class="btn-icon btn-del" onclick="this.parentElement.remove()">✖️</button>
         `;
         container.appendChild(div);
+        
+        // 初始化触摸拖拽
+        initTouchDrag(div.querySelector('.drag-handle'));
     }
 
     function duplicateMedRow(btn) {
         const row = btn.parentElement;
         const name = row.querySelector('.row-name').value;
-        const spec = row.querySelector('.row-spec').value;
+        const qty = row.querySelector('.row-qty').value;
+        const unit = row.querySelector('.row-unit').value;
         const containerId = row.closest('.med-section').id;
-        addMedRow(containerId, name, spec);
+        addMedRow(containerId, name, qty, unit);
     }
 
     // --- 数据收集与保存 ---
@@ -566,9 +697,11 @@
         const rows = document.querySelectorAll(`#${containerId} .dynamic-row`);
         return Array.from(rows).map(row => {
             const name = row.querySelector('.row-name').value.trim();
-            const spec = row.querySelector('.row-spec').value.trim();
-            if(name) saveMedToHistory(name);
-            return { name, spec };
+            const qty = row.querySelector('.row-qty').value.trim();
+            const unit = row.querySelector('.row-unit').value;
+            if(name) saveMedToHistory(name, qty, unit);
+            const specStr = (qty && unit) ? `${qty}${unit}` : (qty || unit || '');
+            return { name, spec: specStr };
         }).filter(item => item.name);
     }
 
@@ -595,23 +728,18 @@
         };
 
         let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
-        
-        // 检查是否已存在该日期的记录（防止重复ID或日期冲突）
         const existingIndex = logs.findIndex(l => l.id === logData.id);
         
         if (existingIndex !== -1) {
             logs[existingIndex] = logData;
             showToast("修改已保存! 📝");
         } else {
-            // 如果是新ID，但日期已存在（极端情况），覆盖旧日期记录
             const dateConflictIndex = logs.findIndex(l => l.dateStr === logData.dateStr);
             if (dateConflictIndex !== -1) {
                 if(confirm("该日期已有记录，是否覆盖？")) {
                     logs[dateConflictIndex] = logData;
                     showToast("记录已覆盖! 📝");
-                } else {
-                    return;
-                }
+                } else { return; }
             } else {
                 logs.unshift(logData);
                 showToast("记录已保存! 🐾");
@@ -619,12 +747,9 @@
         }
 
         localStorage.setItem('petLogs', JSON.stringify(logs));
-        
-        // 保存后，保持在当前日期，状态改为编辑
         currentEditId = logData.id;
         document.getElementById('saveBtn').textContent = "💾 更新记录";
         document.getElementById('cancelBtn').style.display = "block";
-        
         applyFilter(); 
     }
 
@@ -746,6 +871,9 @@
 
     // --- 编辑与删除 ---
     function editLog(id, scroll = true) {
+        // 切换到打卡Tab
+        switchTab('tab-record', document.querySelector('.nav-item:first-child'));
+
         const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
         const log = logs.find(l => l.id === id);
         if (!log) return;
@@ -785,7 +913,19 @@
             const cid = `med-${time}`;
             document.querySelector(`#${cid} .dynamic-list`).innerHTML = '';
             if (log.meds && log.meds[time]) {
-                log.meds[time].forEach(m => addMedRow(cid, m.name, m.spec));
+                log.meds[time].forEach(m => {
+                    let qty = '', unit = 'ml';
+                    if (m.spec) {
+                        const match = m.spec.match(/^(\d*\.?\d+)(.*)$/);
+                        if (match) {
+                            qty = match[1];
+                            unit = match[2] || 'ml';
+                        } else {
+                            unit = m.spec; 
+                        }
+                    }
+                    addMedRow(cid, m.name, qty, unit);
+                });
             }
         });
     }
@@ -827,7 +967,13 @@
     function exportData() {
         const logs = localStorage.getItem('petLogs') || '[]';
         const history = localStorage.getItem('medHistory') || '[]';
-        const data = { logs: JSON.parse(logs), medHistory: JSON.parse(history), exportDate: new Date().toISOString() };
+        const specs = localStorage.getItem('medLastSpecs') || '{}';
+        const data = { 
+            logs: JSON.parse(logs), 
+            medHistory: JSON.parse(history), 
+            medLastSpecs: JSON.parse(specs),
+            exportDate: new Date().toISOString() 
+        };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -849,6 +995,7 @@
                 const data = JSON.parse(e.target.result);
                 if (data.logs) localStorage.setItem('petLogs', JSON.stringify(data.logs));
                 if (data.medHistory) localStorage.setItem('medHistory', JSON.stringify(data.medHistory));
+                if (data.medLastSpecs) localStorage.setItem('medLastSpecs', JSON.stringify(data.medLastSpecs));
                 showToast("备份恢复成功! 🎉");
                 setTimeout(() => location.reload(), 1000);
             } catch (err) { alert('文件格式错误，无法恢复！'); }
