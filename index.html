@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FF9A9E">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -17,9 +18,23 @@
             --text-color: #555;
             --bg-color: #fdfbf7;
             --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --border-color: #eee;
             --shadow: 0 8px 20px rgba(255, 154, 158, 0.2);
             --radius: 16px;
             --nav-height: 60px;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #ffb7b9;
+            --secondary-color: #4a3b42;
+            --accent-color: #c4b0f5;
+            --text-color: #e0e0e0;
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --input-bg: #333333;
+            --border-color: #444444;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
 
         body {
@@ -29,19 +44,19 @@
             background-size: 20px 20px;
             color: var(--text-color);
             margin: 0;
-            padding: 0; /* 移除body padding，由container控制 */
+            padding: 0;
             line-height: 1.6;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px 20px 80px 20px; /* 底部留出导航栏高度 */
+            padding: 20px 20px 90px 20px;
         }
 
-        /* 头部样式 */
         header {
             text-align: center;
             margin-bottom: 20px;
@@ -50,6 +65,7 @@
             border-radius: var(--radius);
             color: white;
             box-shadow: var(--shadow);
+            position: relative;
         }
 
         header h1 { margin: 0 0 5px 0; font-size: 1.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
@@ -77,19 +93,33 @@
         #dateInput::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .weekday-display { margin-left: 10px; font-weight: bold; font-size: 0.9rem; }
 
-        /* 视图切换控制 */
+        /* 提醒横幅 */
+        .reminder-banner {
+            background: rgba(255, 255, 255, 0.95);
+            color: #d45d79;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 卡片通用样式 */
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
             padding: 15px;
             margin-bottom: 15px;
             box-shadow: var(--shadow);
-            border: 2px solid white;
+            border: 2px solid var(--bg-color);
+            transition: background 0.3s;
         }
 
         .section-title {
@@ -105,81 +135,99 @@
             background: var(--primary-color); margin-right: 10px; border-radius: 4px;
         }
 
-        /* 表单元素 */
         .form-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .input-group { flex: 1; min-width: 100%; } /* 手机端默认全宽 */
+        .input-group { flex: 1; min-width: 100%; }
         @media(min-width: 600px) { .input-group { min-width: 200px; } }
         
-        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #666; }
+        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-color); opacity: 0.8; }
 
         input[type="text"], input[type="number"], input[type="time"], input[type="date"], select {
-            width: 100%; padding: 10px; border: 2px solid #eee;
+            width: 100%; padding: 10px; border: 2px solid var(--border-color);
             border-radius: 10px; font-size: 1rem; outline: none;
-            transition: border-color 0.3s; box-sizing: border-box;
-            background: white;
+            transition: border-color 0.3s, background 0.3s, color 0.3s; 
+            box-sizing: border-box;
+            background: var(--input-bg);
+            color: var(--text-color);
         }
         input:focus, select:focus { border-color: var(--primary-color); }
 
-        /* 单选/多选按钮组 */
         .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .radio-label { cursor: pointer; position: relative; }
         .radio-label input { display: none; }
         .radio-label span {
-            display: inline-block; padding: 6px 12px; background: #f0f0f0;
+            display: inline-block; padding: 6px 12px; 
+            background: var(--bg-color);
             border-radius: 20px; font-size: 0.85rem; transition: all 0.3s;
-            border: 2px solid transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
         }
         .radio-label input:checked + span {
             background: var(--secondary-color); color: #d45d79;
             border-color: var(--primary-color); font-weight: bold;
         }
+        [data-theme="dark"] .radio-label input:checked + span { color: #ff9a9e; }
 
-        /* 动态列表 */
-        .dynamic-list { display: flex; flex-direction: column; gap: 8px; min-height: 10px; } /* min-height 方便空列表拖入 */
+        .dynamic-list { display: flex; flex-direction: column; gap: 8px; min-height: 10px; }
         .dynamic-row {
-            display: flex; gap: 5px; align-items: center;
-            background: #f9f9f9; padding: 8px; border-radius: 8px;
-            border: 1px solid #eee; transition: background 0.2s;
-            position: relative; /* 为拖拽定位做准备 */
+            display: flex; gap: 4px; align-items: center;
+            background: var(--bg-color); padding: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color); transition: background 0.2s;
+            position: relative;
+        }
+
+        .dynamic-row input, .dynamic-row select {
+            padding: 6px 4px; /* 极窄内边距 */
+            font-size: 0.9rem; height: 36px;
         }
         
-        /* 拖拽相关样式 */
         .drag-handle {
-            cursor: move; color: #ccc; font-size: 1.4rem; padding: 0 8px;
-            user-select: none; touch-action: none; /* 关键：禁止默认触摸行为 */
+            cursor: move; color: #ccc; font-size: 1.4rem; padding: 0 2px;
+            user-select: none; touch-action: none;
         }
         .drag-handle:active { color: var(--primary-color); }
         
-        /* 拖拽时的幽灵元素样式 */
         .dragging-clone {
-            position: fixed; z-index: 9999; background: white;
+            position: fixed; z-index: 9999; background: var(--card-bg);
             box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0.9;
             pointer-events: none; border: 2px solid var(--primary-color);
             border-radius: 8px; padding: 8px; width: 90%; max-width: 350px;
+            color: var(--text-color);
         }
         
         .med-section {
-            background: #fff9fa; border-radius: 12px; padding: 10px;
+            background: var(--bg-color); border-radius: 12px; padding: 10px;
             margin-bottom: 10px; border: 1px dashed var(--primary-color);
             transition: all 0.2s;
         }
-        .med-section.drag-over { background: #ffe0e0; border-style: solid; transform: scale(1.02); }
-        .med-time-title { font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9rem; }
+        .med-section.drag-over { border-style: solid; transform: scale(1.02); opacity: 0.8; }
+        .med-time-title { font-weight: bold; color: var(--text-color); opacity: 0.6; margin-bottom: 8px; font-size: 0.9rem; }
 
-        /* 输入框宽度微调 */
-        .row-time { width: 90px; }
-        .row-val { width: 80px; }
-        .row-name { flex: 2; min-width: 80px; }
-        .row-qty { width: 60px; text-align: center; }
-        .row-unit { width: 65px; padding: 10px 2px; }
+        /* --- v1.9 宽度调整 --- */
+        .row-time { width: 85px; }
+        .row-val { width: 70px; }
+        .row-name { flex: 1; min-width: 60px; } /* 药品名自动撑开 */
+        .row-qty { width: 45px; text-align: center; padding: 6px 2px !important; } /* 数量框更窄 */
+        .row-unit { width: 55px; padding: 6px 0 !important; text-align: center; } /* 单位框更窄 */
 
         .btn-icon { background: none; border: none; font-size: 1.1rem; padding: 5px; color: #999; }
         .btn-del { color: #FF5252; }
         .btn-copy { color: #2196F3; }
         .btn-add-row {
-            background: white; border: 1px dashed #ccc; width: 100%;
+            background: var(--card-bg); border: 1px dashed #ccc; width: 100%;
             padding: 8px; border-radius: 8px; color: #888; margin-top: 5px; font-size: 0.9rem;
         }
+
+        .top-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .btn-small {
+            padding: 6px 12px; border-radius: 20px; border: 1px solid var(--primary-color);
+            background: white; color: var(--primary-color); font-size: 0.85rem; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+        }
+        [data-theme="dark"] .btn-small { background: #333; }
+
+        /* 设置页的输入行容器 */
+        .input-with-btn { display: flex; gap: 8px; align-items: center; }
 
         .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .save-btn {
@@ -193,13 +241,13 @@
             border-radius: 50px; color: #666; font-weight: bold; display: none;
         }
 
-        /* 底部导航栏 */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            height: var(--nav-height); background: white;
+            height: var(--nav-height); background: var(--card-bg);
             display: flex; justify-content: space-around; align-items: center;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100;
             border-top-left-radius: 20px; border-top-right-radius: 20px;
+            border-top: 1px solid var(--border-color);
         }
         .nav-item {
             flex: 1; text-align: center; color: #999;
@@ -211,7 +259,6 @@
         .nav-item.active { color: var(--primary-color); font-weight: bold; }
         .nav-item.active .nav-icon { transform: scale(1.1); transition: transform 0.2s; }
 
-        /* 历史记录筛选栏 */
         .filter-bar {
             display: flex; gap: 10px; margin-bottom: 15px;
             background: rgba(255, 255, 255, 0.8); 
@@ -219,6 +266,8 @@
             border: 2px solid white;
             box-shadow: 0 4px 15px rgba(255, 154, 158, 0.1);
         }
+        [data-theme="dark"] .filter-bar { background: #333; border-color: #444; }
+
         .filter-select, .filter-input {
             flex: 1; border: 2px solid #FECFEF; border-radius: 20px;
             padding: 8px 15px; font-size: 0.9rem; color: #666;
@@ -233,20 +282,20 @@
         .filter-input { flex: 2; }
 
         .history-item {
-            background: white; border-radius: 12px; padding: 15px;
+            background: var(--card-bg); border-radius: 12px; padding: 15px;
             margin-bottom: 15px; border-left: 5px solid var(--primary-color);
         }
         .history-header {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 10px;
         }
         .history-date { font-weight: bold; color: var(--accent-color); }
         
-        details { margin-top: 8px; background: #f9f9f9; border-radius: 8px; overflow: hidden; }
-        summary { padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: #666; font-weight: bold; display: flex; align-items: center; outline: none; }
+        details { margin-top: 8px; background: var(--bg-color); border-radius: 8px; overflow: hidden; }
+        summary { padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-color); font-weight: bold; display: flex; align-items: center; outline: none; }
         summary::after { content: '▼'; font-size: 0.7rem; margin-left: auto; transition: transform 0.2s; }
         details[open] summary::after { transform: rotate(180deg); }
-        .details-content { padding: 10px 12px; border-top: 1px solid #eee; font-size: 0.9rem; color: #555; }
+        .details-content { padding: 10px 12px; border-top: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-color); opacity: 0.9; }
 
         .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; color: white; }
         .tag-good { background-color: #4CAF50; }
@@ -255,11 +304,32 @@
         .tag-neutral { background-color: #9E9E9E; }
         .tag-trend { background-color: #2196F3; }
 
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid var(--border-color);
+        }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-label { font-weight: bold; color: var(--text-color); }
+        
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background-color: white;
+            transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
         .backup-section { text-align: center; padding: 20px; }
         .backup-btn {
             padding: 12px 25px; border-radius: 25px; border: 1px solid #ccc;
-            background: white; color: #666; margin: 10px; font-size: 1rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: var(--card-bg); color: var(--text-color); margin: 10px; font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer;
         }
 
         .toast {
@@ -267,6 +337,8 @@
             background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
             border-radius: 20px; display: none; z-index: 1000;
         }
+        
+        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -278,10 +350,17 @@
             <input type="date" id="dateInput" onchange="onDateChange()">
             <span id="weekdayDisplay" class="weekday-display"></span>
         </div>
+        <div id="reminderBanner" class="reminder-banner"></div>
     </header>
 
     <!-- Tab 1: 今日打卡 -->
     <div id="tab-record" class="tab-content active">
+        <div class="top-actions">
+            <button type="button" class="btn-small" onclick="copyYesterday()">
+                📋 复制昨天记录
+            </button>
+        </div>
+
         <form id="petForm">
             <!-- 1. 体温与体重 -->
             <div class="card">
@@ -394,15 +473,70 @@
         <div id="historyList"></div>
     </div>
 
-    <!-- Tab 3: 备份设置 -->
+    <!-- Tab 3: 统计图表 -->
+    <div id="tab-stats" class="tab-content">
+        <div class="section-title">📊 健康趋势</div>
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: 设置与备份 -->
     <div id="tab-settings" class="tab-content">
         <div class="card">
+            <div class="section-title">🎨 个性化</div>
+            <div class="setting-row">
+                <span class="setting-label">🌙 深色模式</span>
+                <label class="switch">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">💉 提醒设置</div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>上次疫苗日期</label>
+                    <div class="input-with-btn">
+                        <input type="date" id="lastVaccineDate" onchange="saveReminders()">
+                        <button type="button" class="btn-small" onclick="delayDate('vaccine')">⏱️推迟</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>周期 (月)</label>
+                    <input type="number" id="vaccineCycle" value="12" onchange="saveReminders()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>上次驱虫日期</label>
+                    <div class="input-with-btn">
+                        <input type="date" id="lastDewormDate" onchange="saveReminders()">
+                        <button type="button" class="btn-small" onclick="delayDate('deworm')">⏱️推迟</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>周期 (月)</label>
+                    <input type="number" id="dewormCycle" value="1" onchange="saveReminders()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="section-title">⚙️ 数据管理</div>
-            <p style="color:#666; font-size:0.9rem; text-align:center;">数据存储在本地，请定期备份防止丢失。</p>
+            <p style="color:var(--text-color); opacity:0.7; font-size:0.9rem; text-align:center;">数据存储在本地，请定期备份。</p>
             <div class="backup-section">
-                <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份文件</button>
-                <br>
-                <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份文件</button>
+                <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份</button>
+                <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份</button>
                 <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
             </div>
         </div>
@@ -420,9 +554,13 @@
         <div class="nav-icon">📅</div>
         <div>历史</div>
     </div>
+    <div class="nav-item" onclick="switchTab('tab-stats', this)">
+        <div class="nav-icon">📊</div>
+        <div>统计</div>
+    </div>
     <div class="nav-item" onclick="switchTab('tab-settings', this)">
         <div class="nav-icon">⚙️</div>
-        <div>备份</div>
+        <div>设置</div>
     </div>
 </nav>
 
@@ -431,31 +569,241 @@
 <script>
     let currentEditId = null;
     let draggedItem = null;
+    let weightChartInstance = null;
+    let tempChartInstance = null;
 
     // --- 视图切换 ---
     function switchTab(tabId, navEl) {
-        // 切换内容
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        
-        // 切换导航状态
         if(navEl) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             navEl.classList.add('active');
         }
-        
-        // 切换到顶部
         window.scrollTo(0, 0);
+        if(tabId === 'tab-stats') renderCharts();
     }
 
-    // --- 初始化与日期 ---
+    // --- 深色模式 ---
+    function initTheme() {
+        const isDark = localStorage.getItem('darkMode') === 'true';
+        document.getElementById('darkModeToggle').checked = isDark;
+        applyTheme(isDark);
+    }
+
+    function toggleDarkMode() {
+        const isDark = document.getElementById('darkModeToggle').checked;
+        localStorage.setItem('darkMode', isDark);
+        applyTheme(isDark);
+        if(document.getElementById('tab-stats').classList.contains('active')) renderCharts();
+    }
+
+    function applyTheme(isDark) {
+        if(isDark) document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
+    }
+
+    // --- 提醒逻辑 (v1.9 Updated) ---
+    function loadReminders() {
+        const data = JSON.parse(localStorage.getItem('petReminders') || '{}');
+        if(data.vaccine) {
+            document.getElementById('lastVaccineDate').value = data.vaccine.date;
+            document.getElementById('vaccineCycle').value = data.vaccine.cycle;
+        }
+        if(data.deworm) {
+            document.getElementById('lastDewormDate').value = data.deworm.date;
+            document.getElementById('dewormCycle').value = data.deworm.cycle;
+        }
+        checkReminders(data);
+    }
+
+    function saveReminders() {
+        const data = {
+            vaccine: {
+                date: document.getElementById('lastVaccineDate').value,
+                cycle: document.getElementById('vaccineCycle').value
+            },
+            deworm: {
+                date: document.getElementById('lastDewormDate').value,
+                cycle: document.getElementById('dewormCycle').value
+            }
+        };
+        localStorage.setItem('petReminders', JSON.stringify(data));
+        checkReminders(data);
+    }
+
+    function delayDate(type) {
+        const inputId = type === 'vaccine' ? 'lastVaccineDate' : 'lastDewormDate';
+        const input = document.getElementById(inputId);
+        if(!input.value) return alert('请先设置上次日期');
+
+        const days = prompt("因病推迟：请输入推迟的天数", "7");
+        if(days && !isNaN(days)) {
+            const date = new Date(input.value);
+            date.setDate(date.getDate() + parseInt(days));
+            input.value = date.toISOString().split('T')[0];
+            saveReminders();
+            alert(`已推迟 ${days} 天，新的日期为 ${input.value}`);
+        }
+    }
+
+    function checkReminders(data) {
+        const banner = document.getElementById('reminderBanner');
+        let msgs = [];
+        const now = new Date();
+        now.setHours(0,0,0,0); // 清除时分秒，只比对日期
+
+        const check = (item, name) => {
+            if(!item || !item.date || !item.cycle) return;
+            const last = new Date(item.date);
+            const next = new Date(last);
+            next.setMonth(last.getMonth() + parseInt(item.cycle));
+            next.setHours(0,0,0,0);
+            
+            const diffTime = next - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // 逻辑：前一天(1) 或 当天(0) 或 超期(<0)
+            if(diffDays === 1) {
+                msgs.push(`🔔 明天该${name}了`);
+            } else if (diffDays === 0) {
+                msgs.push(`🚨 今天该${name}了！`);
+            } else if (diffDays < 0) {
+                msgs.push(`⚠️ ${name}已超期 ${Math.abs(diffDays)} 天`);
+            }
+        };
+
+        check(data.vaccine, '疫苗');
+        check(data.deworm, '驱虫');
+
+        if(msgs.length > 0) {
+            banner.innerHTML = msgs.join(' &nbsp;|&nbsp; ');
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    // --- 一键复制昨天 ---
+    function copyYesterday() {
+        const todayInput = document.getElementById('dateInput').value;
+        if(!todayInput) return;
+        
+        const today = new Date(todayInput);
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yStr = yesterday.toISOString().split('T')[0];
+
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const yLog = logs.find(l => l.dateStr === yStr);
+
+        if(!yLog) {
+            alert(`没有找到昨天 (${yStr}) 的记录哦 😿`);
+            return;
+        }
+
+        if(confirm(`确定要复制昨天 (${yStr}) 的体重、状态和用药记录吗？\n(当前已填写的将会被覆盖)`)) {
+            if(yLog.weight) document.getElementById('weight').value = yLog.weight;
+            const setRadio = (n, v) => { 
+                if(v) document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.checked = r.value === v); 
+            };
+            setRadio('stool', yLog.stool);
+            setRadio('mental', yLog.mental);
+            setRadio('appetite', yLog.appetite);
+
+            ['morning', 'noon', 'evening'].forEach(time => {
+                const cid = `med-${time}`;
+                document.querySelector(`#${cid} .dynamic-list`).innerHTML = '';
+                if (yLog.meds && yLog.meds[time]) {
+                    yLog.meds[time].forEach(m => {
+                        let qty = '', unit = 'ml';
+                        if (m.spec) {
+                            const match = m.spec.match(/^(\d*\.?\d+)(.*)$/);
+                            if (match) { qty = match[1]; unit = match[2] || 'ml'; } 
+                            else { unit = m.spec; }
+                        }
+                        addMedRow(cid, m.name, qty, unit);
+                    });
+                }
+            });
+            showToast("已复制昨天记录! 📋");
+        }
+    }
+
+    // --- 图表渲染 ---
+    function renderCharts() {
+        const ctxWeight = document.getElementById('weightChart').getContext('2d');
+        const ctxTemp = document.getElementById('tempChart').getContext('2d');
+        
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        logs.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+        logs = logs.slice(-14);
+
+        const labels = logs.map(l => l.dateStr.slice(5));
+        const weights = logs.map(l => l.weight || null);
+        const temps = logs.map(l => {
+            if(l.temps && l.temps.length) return Math.max(...l.temps.map(t => parseFloat(t.val)));
+            if(l.temp) return parseFloat(l.temp);
+            return null;
+        });
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const gridColor = isDark ? '#444' : '#eee';
+        const textColor = isDark ? '#aaa' : '#666';
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor } }
+            },
+            plugins: { legend: { labels: { color: textColor } } }
+        };
+
+        if(weightChartInstance) weightChartInstance.destroy();
+        if(tempChartInstance) tempChartInstance.destroy();
+
+        weightChartInstance = new Chart(ctxWeight, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '体重 (kg)',
+                    data: weights,
+                    borderColor: '#FF9A9E',
+                    backgroundColor: 'rgba(255, 154, 158, 0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: commonOptions
+        });
+
+        tempChartInstance = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '最高体温 (℃)',
+                    data: temps,
+                    borderColor: '#a18cd1',
+                    backgroundColor: 'rgba(161, 140, 209, 0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: commonOptions
+        });
+    }
+
+    // --- 基础逻辑 ---
     function initDate() {
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const todayStr = `${year}-${month}-${day}`;
-        
         document.getElementById('dateInput').value = todayStr;
         updateWeekday();
         checkLogForDate(todayStr);
@@ -471,7 +819,6 @@
         const dateInput = document.getElementById('dateInput');
         const display = document.getElementById('weekdayDisplay');
         if (!dateInput.value) { display.textContent = ''; return; }
-        
         const parts = dateInput.value.split('-');
         const date = new Date(parts[0], parts[1] - 1, parts[2]); 
         const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
@@ -481,7 +828,6 @@
     function checkLogForDate(dateStr) {
         const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
         const existingLog = logs.find(l => l.dateStr === dateStr);
-
         if (existingLog) {
             editLog(existingLog.id, false);
             showToast("已加载该日记录 📖");
@@ -490,7 +836,6 @@
         }
     }
 
-    // --- 自动补全逻辑 ---
     function updateMedDatalist() {
         const history = JSON.parse(localStorage.getItem('medHistory') || '[]');
         const datalist = document.getElementById('med-history-list');
@@ -529,8 +874,6 @@
         }
     }
 
-    // --- 拖拽逻辑 (PC + Mobile) ---
-    // PC Drag
     function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
     function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
     function drag(ev) { draggedItem = ev.target.closest('.dynamic-row'); ev.dataTransfer.effectAllowed = "move"; }
@@ -542,87 +885,58 @@
         if (draggedItem && list) { list.appendChild(draggedItem); draggedItem = null; }
     }
 
-    // Mobile Touch Drag (自定义实现)
-    let touchClone = null;
-    let touchSrcItem = null;
-    let touchOffsetX = 0;
-    let touchOffsetY = 0;
-
+    let touchClone = null, touchSrcItem = null, touchOffsetX = 0, touchOffsetY = 0;
     function initTouchDrag(handle) {
         handle.addEventListener('touchstart', handleTouchStart, {passive: false});
         handle.addEventListener('touchmove', handleTouchMove, {passive: false});
         handle.addEventListener('touchend', handleTouchEnd);
     }
-
     function handleTouchStart(e) {
-        e.preventDefault(); // 防止滚动
+        e.preventDefault();
         const touch = e.touches[0];
         touchSrcItem = e.target.closest('.dynamic-row');
-        
-        // 创建克隆体
         touchClone = touchSrcItem.cloneNode(true);
         touchClone.classList.add('dragging-clone');
-        
-        // 计算偏移量，让手指按在克隆体相对位置
         const rect = touchSrcItem.getBoundingClientRect();
         touchOffsetX = touch.clientX - rect.left;
         touchOffsetY = touch.clientY - rect.top;
-
-        // 设置初始位置
         touchClone.style.left = (rect.left) + 'px';
         touchClone.style.top = (rect.top) + 'px';
         touchClone.style.width = rect.width + 'px';
-        
         document.body.appendChild(touchClone);
-        touchSrcItem.style.opacity = '0.3'; // 原元素变半透明
+        touchSrcItem.style.opacity = '0.3';
     }
-
     function handleTouchMove(e) {
         if (!touchClone) return;
         e.preventDefault();
         const touch = e.touches[0];
-        
-        // 移动克隆体
         touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
         touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
-
-        // 检测下方元素高亮
         document.querySelectorAll('.med-section').forEach(sec => sec.classList.remove('drag-over'));
-        // 临时隐藏克隆体以检测下方元素
         touchClone.style.display = 'none';
         const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
         touchClone.style.display = 'block';
-
         if (elemBelow) {
             const section = elemBelow.closest('.med-section');
             if (section) section.classList.add('drag-over');
         }
     }
-
     function handleTouchEnd(e) {
         if (!touchClone) return;
         const touch = e.changedTouches[0];
-        
-        // 查找放置目标
         touchClone.style.display = 'none';
         const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
         const section = elemBelow ? elemBelow.closest('.med-section') : null;
-        
         if (section) {
             const list = section.querySelector('.dynamic-list');
             list.appendChild(touchSrcItem);
             section.classList.remove('drag-over');
         }
-
-        // 清理
         document.body.removeChild(touchClone);
         touchSrcItem.style.opacity = '1';
-        touchClone = null;
-        touchSrcItem = null;
+        touchClone = null; touchSrcItem = null;
     }
 
-
-    // --- 动态行操作 ---
     function addTempRow(time = '', val = '') {
         const container = document.getElementById('temp-list');
         const div = document.createElement('div');
@@ -648,20 +962,19 @@
         div.innerHTML = `
             <span class="drag-handle">⋮⋮</span>
             <input type="text" class="row-name" list="med-history-list" placeholder="药品名称" value="${name}" oninput="autoFillSpec(this)">
-            <input type="number" step="0.1" class="row-qty" placeholder="量" value="${qty}">
+            <input type="text" class="row-qty" placeholder="量" value="${qty}">
             <select class="row-unit">
                 <option value="ml" ${unit==='ml'?'selected':''}>ml</option>
                 <option value="管" ${unit==='管'?'selected':''}>管</option>
                 <option value="粒" ${unit==='粒'?'selected':''}>粒</option>
                 <option value="颗" ${unit==='颗'?'selected':''}>颗</option>
                 <option value="片" ${unit==='片'?'selected':''}>片</option>
+                <option value="包" ${unit==='包'?'selected':''}>包</option>
             </select>
             <button type="button" class="btn-icon btn-copy" onclick="duplicateMedRow(this)">📋</button>
             <button type="button" class="btn-icon btn-del" onclick="this.parentElement.remove()">✖️</button>
         `;
         container.appendChild(div);
-        
-        // 初始化触摸拖拽
         initTouchDrag(div.querySelector('.drag-handle'));
     }
 
@@ -674,17 +987,14 @@
         addMedRow(containerId, name, qty, unit);
     }
 
-    // --- 数据收集与保存 ---
     function getRadioValue(name) {
         const el = document.querySelector(`input[name="${name}"]:checked`);
         return el ? el.value : '';
     }
-    
     function getCheckboxValues(name) {
         const els = document.querySelectorAll(`input[name="${name}"]:checked`);
         return Array.from(els).map(el => el.value);
     }
-
     function getTempData() {
         const rows = document.querySelectorAll('#temp-list .dynamic-row');
         return Array.from(rows).map(row => ({
@@ -692,7 +1002,6 @@
             val: row.querySelector('.row-val').value
         })).filter(item => item.val);
     }
-
     function getMedData(containerId) {
         const rows = document.querySelectorAll(`#${containerId} .dynamic-row`);
         return Array.from(rows).map(row => {
@@ -751,9 +1060,9 @@
         document.getElementById('saveBtn').textContent = "💾 更新记录";
         document.getElementById('cancelBtn').style.display = "block";
         applyFilter(); 
+        if(document.getElementById('tab-stats').classList.contains('active')) renderCharts();
     }
 
-    // --- 筛选逻辑 ---
     function toggleFilterInputs() {
         const type = document.getElementById('filterType').value;
         document.getElementById('filterDate').style.display = type === 'date' ? 'block' : 'none';
@@ -794,7 +1103,6 @@
         renderHistory(filteredLogs);
     }
 
-    // --- 渲染历史记录 ---
     function renderHistory(logsToRender) {
         const container = document.getElementById('historyList');
         let logs = logsToRender || JSON.parse(localStorage.getItem('petLogs') || '[]');
@@ -845,10 +1153,10 @@
             const html = `
                 <div class="history-item">
                     <div class="history-header">
-                        <div class="history-date">${log.dateStr} <small style="color:#888">${log.weekday}</small></div>
+                        <div class="history-date">${log.dateStr} <small style="opacity:0.7">${log.weekday}</small></div>
                         <div class="history-actions">
-                            <span style="color:#2196F3" onclick="editLog(${log.id}, true)">✏️</span>
-                            <span style="color:#FF5252" onclick="deleteLog(${log.id})">🗑️</span>
+                            <span style="color:#2196F3; cursor:pointer;" onclick="editLog(${log.id}, true)">✏️</span>
+                            <span style="color:#FF5252; cursor:pointer; margin-left:10px;" onclick="deleteLog(${log.id})">🗑️</span>
                         </div>
                     </div>
                     <div class="history-content">
@@ -860,7 +1168,7 @@
                             ${getTag(log.appetite, 'appetite')}
                             ${trendHtml}
                         </div>
-                        ${log.special ? `<div style="background:#fff0f0;padding:5px;border-radius:4px;color:#d45d79;font-size:0.9rem;margin-bottom:5px;">📝 ${log.special}</div>` : ''}
+                        ${log.special ? `<div style="background:rgba(255,0,0,0.05);padding:5px;border-radius:4px;color:#d45d79;font-size:0.9rem;margin-bottom:5px;">📝 ${log.special}</div>` : ''}
                         ${medHtml}
                     </div>
                 </div>
@@ -869,15 +1177,11 @@
         });
     }
 
-    // --- 编辑与删除 ---
     function editLog(id, scroll = true) {
-        // 切换到打卡Tab
         switchTab('tab-record', document.querySelector('.nav-item:first-child'));
-
         const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
         const log = logs.find(l => l.id === id);
         if (!log) return;
-
         if(scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
         
         currentEditId = log.id;
@@ -917,12 +1221,8 @@
                     let qty = '', unit = 'ml';
                     if (m.spec) {
                         const match = m.spec.match(/^(\d*\.?\d+)(.*)$/);
-                        if (match) {
-                            qty = match[1];
-                            unit = match[2] || 'ml';
-                        } else {
-                            unit = m.spec; 
-                        }
+                        if (match) { qty = match[1]; unit = match[2] || 'ml'; } 
+                        else { unit = m.spec; }
                     }
                     addMedRow(cid, m.name, qty, unit);
                 });
@@ -937,6 +1237,7 @@
             localStorage.setItem('petLogs', JSON.stringify(logs));
             if (currentEditId === id) resetForm(true);
             applyFilter();
+            if(document.getElementById('tab-stats').classList.contains('active')) renderCharts();
         }
     }
 
@@ -944,14 +1245,8 @@
         const currentDate = document.getElementById('dateInput').value;
         document.getElementById('petForm').reset();
         document.querySelectorAll('.dynamic-list').forEach(el => el.innerHTML = '');
-        
-        if (resetDate) {
-            initDate();
-        } else {
-            document.getElementById('dateInput').value = currentDate;
-            updateWeekday();
-        }
-        
+        if (resetDate) { initDate(); } 
+        else { document.getElementById('dateInput').value = currentDate; updateWeekday(); }
         currentEditId = null;
         document.getElementById('saveBtn').textContent = "💾 保存记录";
         document.getElementById('cancelBtn').style.display = "none";
@@ -963,15 +1258,16 @@
         setTimeout(() => t.style.display = 'none', 2000);
     }
 
-    // --- 备份与恢复 ---
     function exportData() {
         const logs = localStorage.getItem('petLogs') || '[]';
         const history = localStorage.getItem('medHistory') || '[]';
         const specs = localStorage.getItem('medLastSpecs') || '{}';
+        const reminders = localStorage.getItem('petReminders') || '{}';
         const data = { 
             logs: JSON.parse(logs), 
             medHistory: JSON.parse(history), 
             medLastSpecs: JSON.parse(specs),
+            reminders: JSON.parse(reminders),
             exportDate: new Date().toISOString() 
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -996,6 +1292,7 @@
                 if (data.logs) localStorage.setItem('petLogs', JSON.stringify(data.logs));
                 if (data.medHistory) localStorage.setItem('medHistory', JSON.stringify(data.medHistory));
                 if (data.medLastSpecs) localStorage.setItem('medLastSpecs', JSON.stringify(data.medLastSpecs));
+                if (data.reminders) localStorage.setItem('petReminders', JSON.stringify(data.reminders));
                 showToast("备份恢复成功! 🎉");
                 setTimeout(() => location.reload(), 1000);
             } catch (err) { alert('文件格式错误，无法恢复！'); }
@@ -1004,9 +1301,11 @@
     }
 
     window.onload = function() {
+        initTheme();
         initDate();
         updateMedDatalist();
         applyFilter();
+        loadReminders();
     };
 </script>
 </body>
