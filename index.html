@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐾 毛豆每日健康日记</title>
+   <link rel="manifest" href="manifest.json">
+   <meta name="theme-color" content="#FF9A9E">
+   <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        :root {
+            --primary-color: #FF9A9E;
+            --secondary-color: #FECFEF;
+            --accent-color: #a18cd1;
+            --text-color: #555;
+            --bg-color: #fdfbf7;
+            --card-bg: #ffffff;
+            --shadow: 0 8px 20px rgba(255, 154, 158, 0.2);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(var(--secondary-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
+            padding: 20px;
+            border-radius: var(--radius);
+            color: white;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .date-wrapper {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255,255,255,0.25);
+            padding: 5px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .date-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .date-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .weekday-display {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 2px solid white;
+            transition: transform 0.2s;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 20px;
+            background: var(--primary-color);
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+
+        /* 表单元素 */
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        input[type="text"], 
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* 选项标签样式 */
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .radio-label {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .radio-label input {
+            display: none;
+        }
+
+        .radio-label span {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .radio-label input:checked + span {
+            background: var(--secondary-color);
+            color: #d45d79;
+            border-color: var(--primary-color);
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
+        }
+
+        /* 药品部分 */
+        .med-section {
+            background: #fff9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px dashed var(--primary-color);
+        }
+
+        .med-time-title {
+            font-weight: bold;
+            color: #888;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .med-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .med-row input {
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+
+        .med-name { flex: 2; }
+        .med-spec { flex: 1; }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn-icon:hover { transform: scale(1.2); }
+        .btn-add { color: #4CAF50; }
+        .btn-del { color: #FF5252; }
+        .btn-copy { color: #2196F3; }
+
+        .btn-add-med {
+            background: white;
+            border: 1px dashed #ccc;
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .btn-add-med:hover {
+            background: #f5f5f5;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* 按钮组 */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .save-btn {
+            flex: 2;
+            padding: 15px;
+            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.6);
+        }
+
+        .cancel-btn {
+            flex: 1;
+            padding: 15px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 50px;
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+        }
+
+        /* 历史记录 */
+        .history-container {
+            margin-top: 40px;
+        }
+        
+        .history-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 5px solid var(--primary-color);
+            position: relative;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .history-date {
+            font-weight: bold;
+            color: var(--accent-color);
+            font-size: 1.05rem;
+        }
+
+        .history-actions span {
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-left: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #f5f5f5;
+        }
+
+        .btn-edit-log { color: #2196F3; }
+        .btn-del-log { color: #FF5252; }
+
+        .history-content {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            color: white;
+        }
+        .tag-good { background-color: #4CAF50; }
+        .tag-warn { background-color: #FFC107; color: #555; }
+        .tag-bad { background-color: #FF5252; }
+        .tag-neutral { background-color: #9E9E9E; }
+
+        .special-note {
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #fff0f0;
+            border-radius: 8px;
+            color: #d45d79;
+            font-weight: bold;
+            font-size: 0.95rem;
+            border: 1px solid #ffcccc;
+        }
+
+        /* 弹窗提示 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🐾 萌宠健康日记</h1>
+        <div class="date-wrapper">
+            <input type="date" id="dateInput" class="date-input" onchange="updateWeekday()">
+            <span id="weekdayDisplay" class="weekday-display"></span>
+        </div>
+    </header>
+
+    <form id="petForm">
+        <!-- 基础数据 -->
+        <div class="card">
+            <div class="section-title">今日体征</div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>🌡️ 体温 (℃)</label>
+                    <input type="number" step="0.1" id="temperature" placeholder="例如: 38.5">
+                </div>
+                <div class="input-group">
+                    <label>⚖️ 体重 (kg)</label>
+                    <input type="number" step="0.01" id="weight" placeholder="例如: 5.2">
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态勾选 -->
+        <div class="card">
+            <div class="section-title">状态记录</div>
+            
+            <div class="form-row">
+                <div class="input-group">
+                    <label>💩 大便状态</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="stool" value="正常"><span>正常</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="无便"><span>无便</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="软便"><span>软便</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="拉稀"><span>拉稀</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="便血"><span>便血</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label>🧠 精神状态</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="mental" value="良好"><span>良好 ☀️</span></label>
+                        <label class="radio-label"><input type="radio" name="mental" value="一般"><span>一般 ☁️</span></label>
+                        <label class="radio-label"><input type="radio" name="mental" value="不佳"><span>不佳 🌧️</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label>🍖 食欲情况</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="appetite" value="多食"><span>多食 🍗</span></label>
+                        <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
+                        <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新增特殊情况 -->
+            <div class="form-row">
+                <div class="input-group">
+                    <label>📝 特殊情况 (选填)</label>
+                    <input type="text" id="special" placeholder="例如: 呕吐、咳嗽、打喷嚏等备注">
+                </div>
+            </div>
+        </div>
+
+        <!-- 用药记录 -->
+        <div class="card">
+            <div class="section-title">💊 用药打卡</div>
+            
+            <!-- 早 -->
+            <div class="med-section" id="med-morning">
+                <div class="med-time-title">🌅 早上</div>
+                <div class="med-list"></div>
+                <button type="button" class="btn-add-med" onclick="addMedRow('med-morning')">+ 添加药品</button>
+            </div>
+
+            <!-- 中 -->
+            <div class="med-section" id="med-noon">
+                <div class="med-time-title">☀️ 中午</div>
+                <div class="med-list"></div>
+                <button type="button" class="btn-add-med" onclick="addMedRow('med-noon')">+ 添加药品</button>
+            </div>
+
+            <!-- 晚 -->
+            <div class="med-section" id="med-evening">
+                <div class="med-time-title">🌙 晚上</div>
+                <div class="med-list"></div>
+                <button type="button" class="btn-add-med" onclick="addMedRow('med-evening')">+ 添加药品</button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm()">取消编辑</button>
+            <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
+        </div>
+    </form>
+
+    <!-- 历史记录 -->
+    <div class="history-container">
+        <div class="section-title">📅 历史记录</div>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast">记录已保存! 🐾</div>
+
+<script>
+    let currentEditId = null;
+
+    // 初始化日期
+    function initDate() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        const dateInput = document.getElementById('dateInput');
+        dateInput.value = todayStr;
+        updateWeekday();
+    }
+
+    // 更新星期显示
+    function updateWeekday() {
+        const dateInput = document.getElementById('dateInput');
+        const display = document.getElementById('weekdayDisplay');
+        
+        if (!dateInput.value) {
+            display.textContent = '';
+            return;
+        }
+
+        const date = new Date(dateInput.value);
+        const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        display.textContent = days[date.getDay()];
+    }
+
+    // 添加药品行
+    function addMedRow(containerId, name = '', spec = '') {
+        const container = document.querySelector(`#${containerId} .med-list`);
+        const div = document.createElement('div');
+        div.className = 'med-row';
+        div.innerHTML = `
+            <input type="text" class="med-name" placeholder="药品名称" value="${name}">
+            <input type="text" class="med-spec" placeholder="规格(如:1粒)" value="${spec}">
+            <button type="button" class="btn-icon btn-copy" onclick="duplicateRow(this)" title="复制此行">📋</button>
+            <button type="button" class="btn-icon btn-del" onclick="deleteRow(this)" title="删除">✖️</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function deleteRow(btn) {
+        btn.parentElement.remove();
+    }
+
+    function duplicateRow(btn) {
+        const row = btn.parentElement;
+        const name = row.querySelector('.med-name').value;
+        const spec = row.querySelector('.med-spec').value;
+        const containerId = row.parentElement.parentElement.id;
+        addMedRow(containerId, name, spec);
+    }
+
+    function getRadioValue(name) {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '';
+    }
+
+    function setRadioValue(name, value) {
+        const radios = document.querySelectorAll(`input[name="${name}"]`);
+        radios.forEach(radio => {
+            radio.checked = (radio.value === value);
+        });
+    }
+
+    function getMeds(containerId) {
+        const rows = document.querySelectorAll(`#${containerId} .med-row`);
+        const meds = [];
+        rows.forEach(row => {
+            const name = row.querySelector('.med-name').value.trim();
+            const spec = row.querySelector('.med-spec').value.trim();
+            if (name) {
+                meds.push({ name, spec });
+            }
+        });
+        return meds;
+    }
+
+    // 保存记录
+    function saveLog() {
+        const dateInput = document.getElementById('dateInput').value;
+        const weekday = document.getElementById('weekdayDisplay').textContent;
+        
+        if (!dateInput) {
+            alert("请选择日期！");
+            return;
+        }
+
+        const logData = {
+            id: currentEditId ? currentEditId : Date.now(),
+            dateStr: dateInput,
+            weekday: weekday,
+            temp: document.getElementById('temperature').value,
+            weight: document.getElementById('weight').value,
+            stool: getRadioValue('stool'),
+            mental: getRadioValue('mental'),
+            appetite: getRadioValue('appetite'),
+            special: document.getElementById('special').value, // 新增字段
+            meds: {
+                morning: getMeds('med-morning'),
+                noon: getMeds('med-noon'),
+                evening: getMeds('med-evening')
+            }
+        };
+
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+
+        if (currentEditId) {
+            const index = logs.findIndex(l => l.id === currentEditId);
+            if (index !== -1) {
+                logs[index] = logData;
+                showToast("修改已保存! 📝");
+            }
+        } else {
+            logs.unshift(logData);
+            showToast("记录已保存! 🐾");
+        }
+
+        localStorage.setItem('petLogs', JSON.stringify(logs));
+        resetForm();
+        renderHistory();
+    }
+
+    // 编辑记录
+    function editLog(id) {
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const log = logs.find(l => l.id === id);
+        
+        if (!log) return;
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        currentEditId = log.id;
+        document.getElementById('saveBtn').textContent = "💾 更新记录";
+        document.getElementById('cancelBtn').style.display = "block";
+
+        document.getElementById('dateInput').value = log.dateStr;
+        updateWeekday();
+        document.getElementById('temperature').value = log.temp;
+        document.getElementById('weight').value = log.weight;
+        document.getElementById('special').value = log.special || ''; // 回显特殊情况
+
+        setRadioValue('stool', log.stool);
+        setRadioValue('mental', log.mental);
+        setRadioValue('appetite', log.appetite);
+
+        ['morning', 'noon', 'evening'].forEach(time => {
+            const containerId = `med-${time}`;
+            document.querySelector(`#${containerId} .med-list`).innerHTML = '';
+            if (log.meds && log.meds[time]) {
+                log.meds[time].forEach(med => {
+                    addMedRow(containerId, med.name, med.spec);
+                });
+            }
+        });
+    }
+
+    // 重置表单
+    function resetForm() {
+        document.getElementById('petForm').reset();
+        document.querySelectorAll('.med-list').forEach(el => el.innerHTML = '');
+        initDate();
+        currentEditId = null;
+        document.getElementById('saveBtn').textContent = "💾 保存记录";
+        document.getElementById('cancelBtn').style.display = "none";
+    }
+
+    // 渲染历史记录
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        logs.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+        
+        container.innerHTML = '';
+
+        if (logs.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:#999;">暂无记录，快来添加第一条吧！🐱</p>';
+            return;
+        }
+
+        logs.forEach((log) => {
+            const getTagClass = (val, type) => {
+                if (!val) return '';
+                if (type === 'stool') {
+                    if (val === '正常') return 'tag-good';
+                    if (val === '无便') return 'tag-neutral';
+                    return 'tag-bad';
+                }
+                if (type === 'mental') return val === '良好' ? 'tag-good' : (val === '一般' ? 'tag-warn' : 'tag-bad');
+                if (type === 'appetite') return val === '正常' || val === '多食' ? 'tag-good' : 'tag-bad';
+                return '';
+            };
+
+            const buildMedHtml = (meds, time) => {
+                if (!meds || meds.length === 0) return '';
+                const list = meds.map(m => `${m.name} ${m.spec ? `(${m.spec})` : ''}`).join('、');
+                return `<div><small><b>${time}:</b> ${list}</small></div>`;
+            };
+
+            const hasMeds = log.meds && (
+                (log.meds.morning && log.meds.morning.length > 0) || 
+                (log.meds.noon && log.meds.noon.length > 0) || 
+                (log.meds.evening && log.meds.evening.length > 0)
+            );
+
+            const html = `
+                <div class="history-item">
+                    <div class="history-header">
+                        <div class="history-date">
+                            ${log.dateStr} <small style="font-weight:normal;color:#888">${log.weekday}</small>
+                        </div>
+                        <div class="history-actions">
+                            <span class="btn-edit-log" onclick="editLog(${log.id})">✏️ 编辑</span>
+                            <span class="btn-del-log" onclick="deleteLog(${log.id})">🗑️ 删除</span>
+                        </div>
+                    </div>
+                    <div class="history-content">
+                        ${(log.temp || log.weight) ? `
+                        <div style="margin-bottom:8px;">
+                            ${log.temp ? `🌡️ ${log.temp}℃` : ''} 
+                            ${log.weight ? `&nbsp;&nbsp;⚖️ ${log.weight}kg` : ''}
+                        </div>` : ''}
+                        
+                        ${(log.stool || log.mental || log.appetite) ? `
+                        <div style="margin-bottom:8px;">
+                            ${log.stool ? `<span class="tag ${getTagClass(log.stool, 'stool')}">💩 ${log.stool}</span>` : ''}
+                            ${log.mental ? `<span class="tag ${getTagClass(log.mental, 'mental')}">🧠 ${log.mental}</span>` : ''}
+                            ${log.appetite ? `<span class="tag ${getTagClass(log.appetite, 'appetite')}">🍖 ${log.appetite}</span>` : ''}
+                        </div>` : ''}
+
+                        ${log.special ? `<div class="special-note">📝 备注: ${log.special}</div>` : ''}
+
+                        ${hasMeds ? `
+                        <div style="background:#f9f9f9; padding:8px; border-radius:8px; margin-top:8px;">
+                            ${buildMedHtml(log.meds.morning, '早')}
+                            ${buildMedHtml(log.meds.noon, '中')}
+                            ${buildMedHtml(log.meds.evening, '晚')}
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+    }
+
+    function deleteLog(id) {
+        if(confirm('确定要删除这条记录吗？')) {
+            let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+            logs = logs.filter(l => l.id !== id);
+            localStorage.setItem('petLogs', JSON.stringify(logs));
+            if (currentEditId === id) resetForm();
+            renderHistory();
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 2000);
+    }
+
+    window.onload = function() {
+        initDate();
+        renderHistory();
+    };
+
+</script>
+
+</body>
+</html>

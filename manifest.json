@@ -1,0 +1,23 @@
+{
+  "name": "毛豆健康日记",
+  "short_name": "萌宠日记",
+  "description": "记录爱宠每日体温、体重、饮食及用药情况的健康助手。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdfbf7",
+  "theme_color": "#FF9A9E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "lang": "zh-CN"
+}
