@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🐾 萌宠健康日记</title>
-    <!-- 引入 manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF9A9E">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
@@ -119,7 +121,7 @@
             border-color: var(--primary-color); font-weight: bold;
         }
 
-        /* 动态列表通用样式 (体温 & 药品) */
+        /* 动态列表通用样式 */
         .dynamic-list { display: flex; flex-direction: column; gap: 10px; }
         .dynamic-row {
             display: flex; gap: 8px; align-items: center;
@@ -128,20 +130,17 @@
         }
         .dynamic-row:hover { background: #fff5f5; }
         
-        /* 拖拽手柄 */
         .drag-handle {
             cursor: move; color: #ccc; font-size: 1.2rem; padding: 0 5px;
             user-select: none; touch-action: none;
         }
         .drag-handle:hover { color: var(--primary-color); }
 
-        /* 药品/体温特定输入框宽度 */
         .row-time { width: 110px; }
         .row-val { width: 100px; }
         .row-name { flex: 2; }
         .row-spec { flex: 1; }
 
-        /* 按钮图标 */
         .btn-icon {
             background: none; border: none; cursor: pointer;
             font-size: 1.1rem; padding: 5px; color: #999;
@@ -157,7 +156,6 @@
         }
         .btn-add-row:hover { border-color: var(--primary-color); color: var(--primary-color); }
 
-        /* 药品区域容器 (用于拖拽目标) */
         .med-section {
             background: #fff9fa; border-radius: 12px; padding: 12px;
             margin-bottom: 12px; border: 1px dashed var(--primary-color);
@@ -165,7 +163,6 @@
         .med-section.drag-over { background: #ffe0e0; border-style: solid; }
         .med-time-title { font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9rem; }
 
-        /* 底部按钮 */
         .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .save-btn {
             flex: 2; padding: 15px; border: none; border-radius: 50px;
@@ -193,7 +190,6 @@
             padding: 2px 8px; border-radius: 4px; background: #f5f5f5;
         }
 
-        /* 折叠详情样式 */
         details { margin-top: 8px; background: #f9f9f9; border-radius: 8px; overflow: hidden; }
         summary {
             padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: #666;
@@ -210,6 +206,25 @@
         .tag-bad { background-color: #FF5252; }
         .tag-neutral { background-color: #9E9E9E; }
         .tag-trend { background-color: #2196F3; }
+
+        /* 备份区域样式 */
+        .backup-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #eee;
+            text-align: center;
+        }
+        .backup-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            margin: 0 5px;
+            font-size: 0.9rem;
+        }
+        .backup-btn:hover { background: #f5f5f5; color: var(--primary-color); border-color: var(--primary-color); }
 
         .toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -284,7 +299,7 @@
                         <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
                         <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
                     </div>
-                    <!-- 新增：食欲趋势 -->
+                    <!-- 食欲趋势 -->
                     <div class="radio-group" style="margin-top: 8px;">
                         <label class="radio-label"><input type="checkbox" name="appetite_trend" value="上升"><span>📈 上升</span></label>
                         <label class="radio-label"><input type="checkbox" name="appetite_trend" value="下降"><span>📉 下降</span></label>
@@ -336,6 +351,13 @@
     <div class="history-container">
         <div class="section-title">📅 历史记录</div>
         <div id="historyList"></div>
+    </div>
+
+    <!-- 备份与恢复 -->
+    <div class="backup-section">
+        <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份</button>
+        <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
     </div>
 </div>
 
@@ -390,12 +412,11 @@
     function drag(ev) {
         draggedItem = ev.target.closest('.dynamic-row');
         ev.dataTransfer.effectAllowed = "move";
-        // 移动端兼容性通常需要 Touch API，这里主要适配桌面端拖拽
     }
 
     function drop(ev) {
         ev.preventDefault();
-        const section = ev.currentTarget; // 目标容器 (med-section)
+        const section = ev.currentTarget;
         section.classList.remove('drag-over');
         const list = section.querySelector('.dynamic-list');
         if (draggedItem && list) {
@@ -404,12 +425,11 @@
         }
     }
 
-    // --- 动态行操作 (体温) ---
+    // --- 动态行操作 ---
     function addTempRow(time = '', val = '') {
         const container = document.getElementById('temp-list');
         const div = document.createElement('div');
         div.className = 'dynamic-row';
-        // 默认当前时间
         if (!time) {
             const now = new Date();
             time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -422,7 +442,6 @@
         container.appendChild(div);
     }
 
-    // --- 动态行操作 (药品) ---
     function addMedRow(containerId, name = '', spec = '') {
         const container = document.querySelector(`#${containerId} .dynamic-list`);
         const div = document.createElement('div');
@@ -463,7 +482,7 @@
         return Array.from(rows).map(row => ({
             time: row.querySelector('.row-time').value,
             val: row.querySelector('.row-val').value
-        })).filter(item => item.val); // 过滤掉没填温度的
+        })).filter(item => item.val);
     }
 
     function getMedData(containerId) {
@@ -471,7 +490,7 @@
         return Array.from(rows).map(row => {
             const name = row.querySelector('.row-name').value.trim();
             const spec = row.querySelector('.row-spec').value.trim();
-            if(name) saveMedToHistory(name); // 保存到历史记录
+            if(name) saveMedToHistory(name);
             return { name, spec };
         }).filter(item => item.name);
     }
@@ -485,11 +504,11 @@
             dateStr: dateInput,
             weekday: document.getElementById('weekdayDisplay').textContent,
             weight: document.getElementById('weight').value,
-            temps: getTempData(), // 新结构：数组
+            temps: getTempData(),
             stool: getRadioValue('stool'),
             mental: getRadioValue('mental'),
             appetite: getRadioValue('appetite'),
-            appetiteTrend: getCheckboxValues('appetite_trend'), // 新结构：数组
+            appetiteTrend: getCheckboxValues('appetite_trend'),
             special: document.getElementById('special').value,
             meds: {
                 morning: getMedData('med-morning'),
@@ -526,16 +545,16 @@
         }
 
         logs.forEach(log => {
-            // 兼容旧数据：如果temp是字符串，转为显示
+            // 体温
             let tempHtml = '';
             if (Array.isArray(log.temps) && log.temps.length > 0) {
                 const tempList = log.temps.map(t => `<div>🕒 ${t.time} &nbsp; 🌡️ <b>${t.val}℃</b></div>`).join('');
                 tempHtml = `<details><summary>体温记录 (${log.temps.length}次)</summary><div class="details-content">${tempList}</div></details>`;
-            } else if (log.temp) { // 旧数据兼容
+            } else if (log.temp) {
                 tempHtml = `<div>🌡️ ${log.temp}℃</div>`;
             }
 
-            // 药品 HTML 生成
+            // 药品
             let medHtml = '';
             const hasMeds = log.meds && (log.meds.morning?.length || log.meds.noon?.length || log.meds.evening?.length);
             if (hasMeds) {
@@ -551,10 +570,29 @@
             const getTag = (val, type) => {
                 if(!val) return '';
                 let cls = 'tag-neutral';
-                if(type === 'stool') cls = val==='正常'?'tag-good':(val==='无便'?'tag-neutral':'tag-bad');
-                if(type === 'mental') cls = val==='良好'?'tag-good':(val==='一般'?'tag-warn':'tag-bad');
-                if(type === 'appetite') cls = (val==='正常'||val==='多食')?'tag-good':'tag-bad';
-                return `<span class="tag ${cls}">${val}</span>`;
+                let icon = '';
+                let suffix = '';
+
+                if(type === 'stool') {
+                    icon = '💩';
+                    cls = val==='正常'?'tag-good':(val==='无便'?'tag-neutral':'tag-bad');
+                }
+                if(type === 'mental') {
+                    icon = '🧠';
+                    cls = val==='良好'?'tag-good':(val==='一般'?'tag-warn':'tag-bad');
+                    if(val==='良好') suffix='☀️';
+                    if(val==='一般') suffix='☁️';
+                    if(val==='不佳') suffix='🌧️';
+                }
+                if(type === 'appetite') {
+                    icon = '🍖';
+                    cls = (val==='正常'||val==='多食')?'tag-good':'tag-bad';
+                    if(val==='多食') suffix='🍗';
+                    if(val==='正常') suffix='🦴';
+                    if(val==='不佳') suffix='🥣';
+                }
+
+                return `<span class="tag ${cls}">${icon} ${val} ${suffix}</span>`;
             };
 
             // 食欲趋势
@@ -601,13 +639,11 @@
         document.getElementById('saveBtn').textContent = "💾 更新记录";
         document.getElementById('cancelBtn').style.display = "block";
 
-        // 回填基础
         document.getElementById('dateInput').value = log.dateStr;
         updateWeekday();
         document.getElementById('weight').value = log.weight;
         document.getElementById('special').value = log.special || '';
 
-        // 回填体温 (兼容旧数据)
         document.getElementById('temp-list').innerHTML = '';
         if (Array.isArray(log.temps)) {
             log.temps.forEach(t => addTempRow(t.time, t.val));
@@ -615,13 +651,11 @@
             addTempRow('', log.temp);
         }
 
-        // 回填单选/多选
         const setRadio = (n, v) => { document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.checked = r.value === v); };
         setRadio('stool', log.stool);
         setRadio('mental', log.mental);
         setRadio('appetite', log.appetite);
         
-        // 回填食欲趋势
         document.querySelectorAll('input[name="appetite_trend"]').forEach(cb => cb.checked = false);
         if (log.appetiteTrend) {
             log.appetiteTrend.forEach(val => {
@@ -630,7 +664,6 @@
             });
         }
 
-        // 回填药品
         ['morning', 'noon', 'evening'].forEach(time => {
             const cid = `med-${time}`;
             document.querySelector(`#${cid} .dynamic-list`).innerHTML = '';
@@ -663,6 +696,55 @@
         const t = document.getElementById('toast');
         t.textContent = msg; t.style.display = 'block';
         setTimeout(() => t.style.display = 'none', 2000);
+    }
+
+    // --- 备份与恢复功能 ---
+    function exportData() {
+        const logs = localStorage.getItem('petLogs') || '[]';
+        const history = localStorage.getItem('medHistory') || '[]';
+        const data = {
+            logs: JSON.parse(logs),
+            medHistory: JSON.parse(history),
+            exportDate: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pet_diary_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importData(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        if (!confirm('⚠️ 恢复备份将覆盖当前所有记录，确定要继续吗？')) {
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.logs) {
+                    localStorage.setItem('petLogs', JSON.stringify(data.logs));
+                }
+                if (data.medHistory) {
+                    localStorage.setItem('medHistory', JSON.stringify(data.medHistory));
+                }
+                showToast("备份恢复成功! 🎉");
+                setTimeout(() => location.reload(), 1000);
+            } catch (err) {
+                alert('文件格式错误，无法恢复！');
+            }
+        };
+        reader.readAsText(file);
     }
 
     window.onload = function() {
