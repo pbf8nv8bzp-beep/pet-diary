@@ -177,7 +177,7 @@
         }
 
         .dynamic-row input, .dynamic-row select {
-            padding: 6px 4px; /* 极窄内边距 */
+            padding: 6px 4px;
             font-size: 0.9rem; height: 36px;
         }
         
@@ -203,12 +203,12 @@
         .med-section.drag-over { border-style: solid; transform: scale(1.02); opacity: 0.8; }
         .med-time-title { font-weight: bold; color: var(--text-color); opacity: 0.6; margin-bottom: 8px; font-size: 0.9rem; }
 
-        /* --- v1.9 宽度调整 --- */
+        /* 宽度调整 */
         .row-time { width: 85px; }
         .row-val { width: 70px; }
-        .row-name { flex: 1; min-width: 60px; } /* 药品名自动撑开 */
-        .row-qty { width: 45px; text-align: center; padding: 6px 2px !important; } /* 数量框更窄 */
-        .row-unit { width: 55px; padding: 6px 0 !important; text-align: center; } /* 单位框更窄 */
+        .row-name { flex: 1; min-width: 60px; }
+        .row-qty { width: 45px; text-align: center; padding: 6px 2px !important; }
+        .row-unit { width: 55px; padding: 6px 0 !important; text-align: center; }
 
         .btn-icon { background: none; border: none; font-size: 1.1rem; padding: 5px; color: #999; }
         .btn-del { color: #FF5252; }
@@ -226,7 +226,6 @@
         }
         [data-theme="dark"] .btn-small { background: #333; }
 
-        /* 设置页的输入行容器 */
         .input-with-btn { display: flex; gap: 8px; align-items: center; }
 
         .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
@@ -512,8 +511,8 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>周期 (月)</label>
-                    <input type="number" id="vaccineCycle" value="12" onchange="saveReminders()">
+                    <label>周期 (天)</label>
+                    <input type="number" id="vaccineCycle" value="365" onchange="saveReminders()">
                 </div>
             </div>
             <div class="form-row">
@@ -525,8 +524,8 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>周期 (月)</label>
-                    <input type="number" id="dewormCycle" value="1" onchange="saveReminders()">
+                    <label>周期 (天)</label>
+                    <input type="number" id="dewormCycle" value="30" onchange="saveReminders()">
                 </div>
             </div>
         </div>
@@ -603,7 +602,7 @@
         else document.documentElement.removeAttribute('data-theme');
     }
 
-    // --- 提醒逻辑 (v1.9 Updated) ---
+    // --- 提醒逻辑 (v1.10 Updated: Month -> Day) ---
     function loadReminders() {
         const data = JSON.parse(localStorage.getItem('petReminders') || '{}');
         if(data.vaccine) {
@@ -651,19 +650,19 @@
         const banner = document.getElementById('reminderBanner');
         let msgs = [];
         const now = new Date();
-        now.setHours(0,0,0,0); // 清除时分秒，只比对日期
+        now.setHours(0,0,0,0); 
 
         const check = (item, name) => {
             if(!item || !item.date || !item.cycle) return;
             const last = new Date(item.date);
             const next = new Date(last);
-            next.setMonth(last.getMonth() + parseInt(item.cycle));
+            // v1.10 修改：按天计算
+            next.setDate(last.getDate() + parseInt(item.cycle));
             next.setHours(0,0,0,0);
             
             const diffTime = next - now;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            // 逻辑：前一天(1) 或 当天(0) 或 超期(<0)
             if(diffDays === 1) {
                 msgs.push(`🔔 明天该${name}了`);
             } else if (diffDays === 0) {
