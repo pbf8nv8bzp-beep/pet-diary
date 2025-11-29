@@ -1,23 +1,675 @@
-{
-  "name": "萌宠健康日记",
-  "short_name": "萌宠日记",
-  "description": "记录爱宠每日体温、体重、饮食及用药情况的健康助手。",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#fdfbf7",
-  "theme_color": "#FF9A9E",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐾 萌宠健康日记</title>
+    <!-- 引入 manifest -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --primary-color: #FF9A9E;
+            --secondary-color: #FECFEF;
+            --accent-color: #a18cd1;
+            --text-color: #555;
+            --bg-color: #fdfbf7;
+            --card-bg: #ffffff;
+            --shadow: 0 8px 20px rgba(255, 154, 158, 0.2);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(var(--secondary-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding-bottom: 50px;
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
+            padding: 20px;
+            border-radius: var(--radius);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 { margin: 0 0 10px 0; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+
+        .date-wrapper {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255,255,255,0.25);
+            padding: 5px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .date-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+        }
+        .date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .weekday-display { margin-left: 10px; font-weight: bold; }
+
+        /* 卡片通用样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 2px solid white;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+        .section-title::before {
+            content: ''; display: inline-block; width: 6px; height: 18px;
+            background: var(--primary-color); margin-right: 10px; border-radius: 4px;
+        }
+
+        /* 表单元素 */
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #666; }
+
+        input[type="text"], input[type="number"], input[type="time"] {
+            width: 100%; padding: 10px; border: 2px solid #eee;
+            border-radius: 10px; font-size: 1rem; outline: none;
+            transition: border-color 0.3s; box-sizing: border-box;
+        }
+        input:focus { border-color: var(--primary-color); }
+
+        /* 单选/多选按钮组 */
+        .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .radio-label { cursor: pointer; position: relative; }
+        .radio-label input { display: none; }
+        .radio-label span {
+            display: inline-block; padding: 6px 14px; background: #f0f0f0;
+            border-radius: 20px; font-size: 0.85rem; transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .radio-label input:checked + span {
+            background: var(--secondary-color); color: #d45d79;
+            border-color: var(--primary-color); font-weight: bold;
+        }
+
+        /* 动态列表通用样式 (体温 & 药品) */
+        .dynamic-list { display: flex; flex-direction: column; gap: 10px; }
+        .dynamic-row {
+            display: flex; gap: 8px; align-items: center;
+            background: #f9f9f9; padding: 8px; border-radius: 8px;
+            border: 1px solid #eee; transition: background 0.2s;
+        }
+        .dynamic-row:hover { background: #fff5f5; }
+        
+        /* 拖拽手柄 */
+        .drag-handle {
+            cursor: move; color: #ccc; font-size: 1.2rem; padding: 0 5px;
+            user-select: none; touch-action: none;
+        }
+        .drag-handle:hover { color: var(--primary-color); }
+
+        /* 药品/体温特定输入框宽度 */
+        .row-time { width: 110px; }
+        .row-val { width: 100px; }
+        .row-name { flex: 2; }
+        .row-spec { flex: 1; }
+
+        /* 按钮图标 */
+        .btn-icon {
+            background: none; border: none; cursor: pointer;
+            font-size: 1.1rem; padding: 5px; color: #999;
+        }
+        .btn-icon:hover { transform: scale(1.1); }
+        .btn-del { color: #FF5252; }
+        .btn-copy { color: #2196F3; }
+
+        .btn-add-row {
+            background: white; border: 1px dashed #ccc; width: 100%;
+            padding: 8px; border-radius: 8px; color: #888; cursor: pointer;
+            margin-top: 8px; font-size: 0.9rem;
+        }
+        .btn-add-row:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+        /* 药品区域容器 (用于拖拽目标) */
+        .med-section {
+            background: #fff9fa; border-radius: 12px; padding: 12px;
+            margin-bottom: 12px; border: 1px dashed var(--primary-color);
+        }
+        .med-section.drag-over { background: #ffe0e0; border-style: solid; }
+        .med-time-title { font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9rem; }
+
+        /* 底部按钮 */
+        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .save-btn {
+            flex: 2; padding: 15px; border: none; border-radius: 50px;
+            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 100%);
+            color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+        }
+        .cancel-btn {
+            flex: 1; padding: 15px; background: #e0e0e0; border: none;
+            border-radius: 50px; color: #666; font-weight: bold; cursor: pointer; display: none;
+        }
+
+        /* 历史记录 */
+        .history-item {
+            background: white; border-radius: 12px; padding: 15px;
+            margin-bottom: 15px; border-left: 5px solid var(--primary-color);
+        }
+        .history-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;
+        }
+        .history-date { font-weight: bold; color: var(--accent-color); }
+        .history-actions span {
+            cursor: pointer; font-size: 0.85rem; margin-left: 10px;
+            padding: 2px 8px; border-radius: 4px; background: #f5f5f5;
+        }
+
+        /* 折叠详情样式 */
+        details { margin-top: 8px; background: #f9f9f9; border-radius: 8px; overflow: hidden; }
+        summary {
+            padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: #666;
+            font-weight: bold; user-select: none; outline: none;
+            display: flex; align-items: center;
+        }
+        summary::after { content: '▼'; font-size: 0.7rem; margin-left: auto; transition: transform 0.2s; }
+        details[open] summary::after { transform: rotate(180deg); }
+        .details-content { padding: 10px 12px; border-top: 1px solid #eee; font-size: 0.9rem; color: #555; }
+
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; color: white; }
+        .tag-good { background-color: #4CAF50; }
+        .tag-warn { background-color: #FFC107; color: #555; }
+        .tag-bad { background-color: #FF5252; }
+        .tag-neutral { background-color: #9E9E9E; }
+        .tag-trend { background-color: #2196F3; }
+
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+            border-radius: 20px; display: none; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🐾 萌宠健康日记</h1>
+        <div class="date-wrapper">
+            <input type="date" id="dateInput" class="date-input" onchange="updateWeekday()">
+            <span id="weekdayDisplay" class="weekday-display"></span>
+        </div>
+    </header>
+
+    <form id="petForm">
+        <!-- 1. 体温与体重 -->
+        <div class="card">
+            <div class="section-title">今日体征</div>
+            
+            <div class="form-row">
+                <div class="input-group">
+                    <label>⚖️ 体重 (kg)</label>
+                    <input type="number" step="0.01" id="weight" placeholder="例如: 5.2">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>🌡️ 体温记录 (可多次)</label>
+                <div id="temp-list" class="dynamic-list"></div>
+                <button type="button" class="btn-add-row" onclick="addTempRow()">+ 添加体温记录</button>
+            </div>
+        </div>
+
+        <!-- 2. 状态勾选 -->
+        <div class="card">
+            <div class="section-title">状态记录</div>
+            
+            <div class="form-row">
+                <div class="input-group">
+                    <label>💩 大便状态</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="stool" value="正常"><span>正常</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="无便"><span>无便</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="软便"><span>软便</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="拉稀"><span>拉稀</span></label>
+                        <label class="radio-label"><input type="radio" name="stool" value="便血"><span>便血</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label>🧠 精神状态</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="mental" value="良好"><span>良好 ☀️</span></label>
+                        <label class="radio-label"><input type="radio" name="mental" value="一般"><span>一般 ☁️</span></label>
+                        <label class="radio-label"><input type="radio" name="mental" value="不佳"><span>不佳 🌧️</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label>🍖 食欲情况</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="appetite" value="多食"><span>多食 🍗</span></label>
+                        <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
+                        <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
+                    </div>
+                    <!-- 新增：食欲趋势 -->
+                    <div class="radio-group" style="margin-top: 8px;">
+                        <label class="radio-label"><input type="checkbox" name="appetite_trend" value="上升"><span>📈 上升</span></label>
+                        <label class="radio-label"><input type="checkbox" name="appetite_trend" value="下降"><span>📉 下降</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label>📝 特殊情况 (选填)</label>
+                    <input type="text" id="special" placeholder="例如: 呕吐、咳嗽等备注">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 用药记录 (支持拖拽) -->
+        <div class="card">
+            <div class="section-title">💊 用药打卡 (可拖拽调整)</div>
+            
+            <!-- 自动补全列表 -->
+            <datalist id="med-history-list"></datalist>
+
+            <div class="med-section" id="med-morning" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="med-time-title">🌅 早上</div>
+                <div class="dynamic-list"></div>
+                <button type="button" class="btn-add-row" onclick="addMedRow('med-morning')">+ 添加药品</button>
+            </div>
+
+            <div class="med-section" id="med-noon" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="med-time-title">☀️ 中午</div>
+                <div class="dynamic-list"></div>
+                <button type="button" class="btn-add-row" onclick="addMedRow('med-noon')">+ 添加药品</button>
+            </div>
+
+            <div class="med-section" id="med-evening" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="med-time-title">🌙 晚上</div>
+                <div class="dynamic-list"></div>
+                <button type="button" class="btn-add-row" onclick="addMedRow('med-evening')">+ 添加药品</button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm()">取消编辑</button>
+            <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
+        </div>
+    </form>
+
+    <!-- 历史记录 -->
+    <div class="history-container">
+        <div class="section-title">📅 历史记录</div>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast">记录已保存! 🐾</div>
+
+<script>
+    let currentEditId = null;
+    let draggedItem = null;
+
+    // --- 初始化与日期 ---
+    function initDate() {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        document.getElementById('dateInput').value = todayStr;
+        updateWeekday();
     }
-  ],
-  "lang": "zh-CN"
-}
+
+    function updateWeekday() {
+        const dateInput = document.getElementById('dateInput');
+        const display = document.getElementById('weekdayDisplay');
+        if (!dateInput.value) { display.textContent = ''; return; }
+        const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        display.textContent = days[new Date(dateInput.value).getDay()];
+    }
+
+    // --- 自动补全逻辑 ---
+    function updateMedDatalist() {
+        const history = JSON.parse(localStorage.getItem('medHistory') || '[]');
+        const datalist = document.getElementById('med-history-list');
+        datalist.innerHTML = '';
+        history.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            datalist.appendChild(option);
+        });
+    }
+
+    function saveMedToHistory(name) {
+        if(!name) return;
+        let history = JSON.parse(localStorage.getItem('medHistory') || '[]');
+        if (!history.includes(name)) {
+            history.push(name);
+            localStorage.setItem('medHistory', JSON.stringify(history));
+            updateMedDatalist();
+        }
+    }
+
+    // --- 拖拽逻辑 ---
+    function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+    function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
+    
+    function drag(ev) {
+        draggedItem = ev.target.closest('.dynamic-row');
+        ev.dataTransfer.effectAllowed = "move";
+        // 移动端兼容性通常需要 Touch API，这里主要适配桌面端拖拽
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        const section = ev.currentTarget; // 目标容器 (med-section)
+        section.classList.remove('drag-over');
+        const list = section.querySelector('.dynamic-list');
+        if (draggedItem && list) {
+            list.appendChild(draggedItem);
+            draggedItem = null;
+        }
+    }
+
+    // --- 动态行操作 (体温) ---
+    function addTempRow(time = '', val = '') {
+        const container = document.getElementById('temp-list');
+        const div = document.createElement('div');
+        div.className = 'dynamic-row';
+        // 默认当前时间
+        if (!time) {
+            const now = new Date();
+            time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        }
+        div.innerHTML = `
+            <input type="time" class="row-time" value="${time}">
+            <input type="number" step="0.1" class="row-val" placeholder="℃" value="${val}">
+            <button type="button" class="btn-icon btn-del" onclick="this.parentElement.remove()">✖️</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // --- 动态行操作 (药品) ---
+    function addMedRow(containerId, name = '', spec = '') {
+        const container = document.querySelector(`#${containerId} .dynamic-list`);
+        const div = document.createElement('div');
+        div.className = 'dynamic-row';
+        div.draggable = true;
+        div.ondragstart = drag;
+        div.innerHTML = `
+            <span class="drag-handle">⋮⋮</span>
+            <input type="text" class="row-name" list="med-history-list" placeholder="药品名称" value="${name}">
+            <input type="text" class="row-spec" placeholder="规格" value="${spec}">
+            <button type="button" class="btn-icon btn-copy" onclick="duplicateMedRow(this)">📋</button>
+            <button type="button" class="btn-icon btn-del" onclick="this.parentElement.remove()">✖️</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function duplicateMedRow(btn) {
+        const row = btn.parentElement;
+        const name = row.querySelector('.row-name').value;
+        const spec = row.querySelector('.row-spec').value;
+        const containerId = row.closest('.med-section').id;
+        addMedRow(containerId, name, spec);
+    }
+
+    // --- 数据收集与保存 ---
+    function getRadioValue(name) {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '';
+    }
+    
+    function getCheckboxValues(name) {
+        const els = document.querySelectorAll(`input[name="${name}"]:checked`);
+        return Array.from(els).map(el => el.value);
+    }
+
+    function getTempData() {
+        const rows = document.querySelectorAll('#temp-list .dynamic-row');
+        return Array.from(rows).map(row => ({
+            time: row.querySelector('.row-time').value,
+            val: row.querySelector('.row-val').value
+        })).filter(item => item.val); // 过滤掉没填温度的
+    }
+
+    function getMedData(containerId) {
+        const rows = document.querySelectorAll(`#${containerId} .dynamic-row`);
+        return Array.from(rows).map(row => {
+            const name = row.querySelector('.row-name').value.trim();
+            const spec = row.querySelector('.row-spec').value.trim();
+            if(name) saveMedToHistory(name); // 保存到历史记录
+            return { name, spec };
+        }).filter(item => item.name);
+    }
+
+    function saveLog() {
+        const dateInput = document.getElementById('dateInput').value;
+        if (!dateInput) { alert("请选择日期！"); return; }
+
+        const logData = {
+            id: currentEditId ? currentEditId : Date.now(),
+            dateStr: dateInput,
+            weekday: document.getElementById('weekdayDisplay').textContent,
+            weight: document.getElementById('weight').value,
+            temps: getTempData(), // 新结构：数组
+            stool: getRadioValue('stool'),
+            mental: getRadioValue('mental'),
+            appetite: getRadioValue('appetite'),
+            appetiteTrend: getCheckboxValues('appetite_trend'), // 新结构：数组
+            special: document.getElementById('special').value,
+            meds: {
+                morning: getMedData('med-morning'),
+                noon: getMedData('med-noon'),
+                evening: getMedData('med-evening')
+            }
+        };
+
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        if (currentEditId) {
+            const index = logs.findIndex(l => l.id === currentEditId);
+            if (index !== -1) logs[index] = logData;
+            showToast("修改已保存! 📝");
+        } else {
+            logs.unshift(logData);
+            showToast("记录已保存! 🐾");
+        }
+
+        localStorage.setItem('petLogs', JSON.stringify(logs));
+        resetForm();
+        renderHistory();
+    }
+
+    // --- 渲染历史记录 ---
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        logs.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+        container.innerHTML = '';
+
+        if (logs.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:#999;">暂无记录 🐱</p>';
+            return;
+        }
+
+        logs.forEach(log => {
+            // 兼容旧数据：如果temp是字符串，转为显示
+            let tempHtml = '';
+            if (Array.isArray(log.temps) && log.temps.length > 0) {
+                const tempList = log.temps.map(t => `<div>🕒 ${t.time} &nbsp; 🌡️ <b>${t.val}℃</b></div>`).join('');
+                tempHtml = `<details><summary>体温记录 (${log.temps.length}次)</summary><div class="details-content">${tempList}</div></details>`;
+            } else if (log.temp) { // 旧数据兼容
+                tempHtml = `<div>🌡️ ${log.temp}℃</div>`;
+            }
+
+            // 药品 HTML 生成
+            let medHtml = '';
+            const hasMeds = log.meds && (log.meds.morning?.length || log.meds.noon?.length || log.meds.evening?.length);
+            if (hasMeds) {
+                const buildList = (arr, label) => {
+                    if(!arr || !arr.length) return '';
+                    return `<div style="margin-bottom:4px;"><b>${label}:</b> ${arr.map(m=>`${m.name}${m.spec?'('+m.spec+')':''}`).join('、')}</div>`;
+                };
+                const content = buildList(log.meds.morning, '早') + buildList(log.meds.noon, '中') + buildList(log.meds.evening, '晚');
+                medHtml = `<details><summary>💊 用药详情</summary><div class="details-content">${content}</div></details>`;
+            }
+
+            // 标签生成
+            const getTag = (val, type) => {
+                if(!val) return '';
+                let cls = 'tag-neutral';
+                if(type === 'stool') cls = val==='正常'?'tag-good':(val==='无便'?'tag-neutral':'tag-bad');
+                if(type === 'mental') cls = val==='良好'?'tag-good':(val==='一般'?'tag-warn':'tag-bad');
+                if(type === 'appetite') cls = (val==='正常'||val==='多食')?'tag-good':'tag-bad';
+                return `<span class="tag ${cls}">${val}</span>`;
+            };
+
+            // 食欲趋势
+            let trendHtml = '';
+            if (log.appetiteTrend && log.appetiteTrend.length) {
+                trendHtml = log.appetiteTrend.map(t => `<span class="tag tag-trend">${t}</span>`).join(' ');
+            }
+
+            const html = `
+                <div class="history-item">
+                    <div class="history-header">
+                        <div class="history-date">${log.dateStr} <small style="color:#888">${log.weekday}</small></div>
+                        <div class="history-actions">
+                            <span style="color:#2196F3" onclick="editLog(${log.id})">✏️</span>
+                            <span style="color:#FF5252" onclick="deleteLog(${log.id})">🗑️</span>
+                        </div>
+                    </div>
+                    <div class="history-content">
+                        ${log.weight ? `<div>⚖️ <b>${log.weight}kg</b></div>` : ''}
+                        ${tempHtml}
+                        <div style="margin: 8px 0;">
+                            ${getTag(log.stool, 'stool')}
+                            ${getTag(log.mental, 'mental')}
+                            ${getTag(log.appetite, 'appetite')}
+                            ${trendHtml}
+                        </div>
+                        ${log.special ? `<div style="background:#fff0f0;padding:5px;border-radius:4px;color:#d45d79;font-size:0.9rem;margin-bottom:5px;">📝 ${log.special}</div>` : ''}
+                        ${medHtml}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+    }
+
+    // --- 编辑与删除 ---
+    function editLog(id) {
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const log = logs.find(l => l.id === id);
+        if (!log) return;
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        currentEditId = log.id;
+        document.getElementById('saveBtn').textContent = "💾 更新记录";
+        document.getElementById('cancelBtn').style.display = "block";
+
+        // 回填基础
+        document.getElementById('dateInput').value = log.dateStr;
+        updateWeekday();
+        document.getElementById('weight').value = log.weight;
+        document.getElementById('special').value = log.special || '';
+
+        // 回填体温 (兼容旧数据)
+        document.getElementById('temp-list').innerHTML = '';
+        if (Array.isArray(log.temps)) {
+            log.temps.forEach(t => addTempRow(t.time, t.val));
+        } else if (log.temp) {
+            addTempRow('', log.temp);
+        }
+
+        // 回填单选/多选
+        const setRadio = (n, v) => { document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.checked = r.value === v); };
+        setRadio('stool', log.stool);
+        setRadio('mental', log.mental);
+        setRadio('appetite', log.appetite);
+        
+        // 回填食欲趋势
+        document.querySelectorAll('input[name="appetite_trend"]').forEach(cb => cb.checked = false);
+        if (log.appetiteTrend) {
+            log.appetiteTrend.forEach(val => {
+                const cb = document.querySelector(`input[name="appetite_trend"][value="${val}"]`);
+                if(cb) cb.checked = true;
+            });
+        }
+
+        // 回填药品
+        ['morning', 'noon', 'evening'].forEach(time => {
+            const cid = `med-${time}`;
+            document.querySelector(`#${cid} .dynamic-list`).innerHTML = '';
+            if (log.meds && log.meds[time]) {
+                log.meds[time].forEach(m => addMedRow(cid, m.name, m.spec));
+            }
+        });
+    }
+
+    function deleteLog(id) {
+        if(confirm('确定删除？')) {
+            let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+            logs = logs.filter(l => l.id !== id);
+            localStorage.setItem('petLogs', JSON.stringify(logs));
+            if (currentEditId === id) resetForm();
+            renderHistory();
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('petForm').reset();
+        document.querySelectorAll('.dynamic-list').forEach(el => el.innerHTML = '');
+        initDate();
+        currentEditId = null;
+        document.getElementById('saveBtn').textContent = "💾 保存记录";
+        document.getElementById('cancelBtn').style.display = "none";
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+    }
+
+    window.onload = function() {
+        initDate();
+        updateMedDatalist();
+        renderHistory();
+    };
+</script>
+</body>
+</html>
