@@ -39,7 +39,7 @@
 ## 🚀 如何使用
 
 ### 在线访问
-访问 GitHub Pages 地址： `https://你的用户名.github.io/你的仓库名/`
+访问 GitHub Pages 地址： `https://pbf8nv8bzp-beep.github.io/pet-diary/`
 
 ### 安装到手机 (PWA)
 1. 在手机浏览器 (Safari/Chrome) 中打开网页。
