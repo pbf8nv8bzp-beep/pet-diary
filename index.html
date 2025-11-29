@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🐾 萌宠健康日记</title>
     
-    <!-- 网页适配文件引用 -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FF9A9E">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -62,7 +61,8 @@
             backdrop-filter: blur(5px);
         }
 
-        .date-input {
+        /* 修复：使用ID选择器提高优先级，防止被全局样式覆盖导致白字白底 */
+        #dateInput {
             background: transparent;
             border: none;
             color: white;
@@ -70,8 +70,12 @@
             font-family: inherit;
             cursor: pointer;
             outline: none;
+            width: auto; /* 防止被全局width:100%拉伸 */
+            box-shadow: none;
         }
-        .date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        /* 修改日期选择器图标颜色为白色 */
+        #dateInput::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        
         .weekday-display { margin-left: 10px; font-weight: bold; }
 
         /* 卡片通用样式 */
@@ -102,7 +106,7 @@
         .input-group { flex: 1; min-width: 200px; }
         label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #666; }
 
-        /* 通用输入框样式 */
+        /* 全局输入框样式 */
         input[type="text"], input[type="number"], input[type="time"], input[type="date"], input[type="month"], input[type="week"] {
             width: 100%; padding: 10px; border: 2px solid #eee;
             border-radius: 10px; font-size: 1rem; outline: none;
@@ -179,7 +183,7 @@
             border-radius: 50px; color: #666; font-weight: bold; cursor: pointer; display: none;
         }
 
-        /* --- 历史记录与筛选 (美化版) --- */
+        /* 筛选栏美化 */
         .filter-bar {
             display: flex; gap: 10px; margin-bottom: 15px;
             background: rgba(255, 255, 255, 0.8); 
@@ -188,11 +192,10 @@
             box-shadow: 0 4px 15px rgba(255, 154, 158, 0.1);
         }
 
-        /* 美化下拉框和筛选输入框 */
         .filter-select, .filter-input {
             flex: 1;
-            border: 2px solid #FECFEF; /* 浅粉色边框 */
-            border-radius: 20px; /* 圆角 */
+            border: 2px solid #FECFEF;
+            border-radius: 20px;
             padding: 8px 15px;
             font-size: 0.95rem;
             color: #666;
@@ -200,13 +203,11 @@
             background-color: white;
             transition: all 0.3s;
             cursor: pointer;
-            /* 去掉默认丑陋的箭头 */
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
         }
 
-        /* 给下拉框加一个可爱的粉色箭头 */
         .filter-select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FF9A9E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -253,7 +254,6 @@
         .tag-neutral { background-color: #9E9E9E; }
         .tag-trend { background-color: #2196F3; }
 
-        /* 备份区域样式 */
         .backup-section {
             margin-top: 30px;
             padding-top: 20px;
@@ -285,7 +285,8 @@
     <header>
         <h1>🐾 萌宠健康日记</h1>
         <div class="date-wrapper">
-            <input type="date" id="dateInput" class="date-input" onchange="updateWeekday()">
+            <!-- 修复：onchange 事件触发 checkLogForDate -->
+            <input type="date" id="dateInput" onchange="onDateChange()">
             <span id="weekdayDisplay" class="weekday-display"></span>
         </div>
     </header>
@@ -345,7 +346,6 @@
                         <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
                         <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
                     </div>
-                    <!-- 食欲趋势 -->
                     <div class="radio-group" style="margin-top: 8px;">
                         <label class="radio-label"><input type="checkbox" name="appetite_trend" value="上升"><span>📈 上升</span></label>
                         <label class="radio-label"><input type="checkbox" name="appetite_trend" value="下降"><span>📉 下降</span></label>
@@ -361,11 +361,9 @@
             </div>
         </div>
 
-        <!-- 3. 用药记录 (支持拖拽) -->
+        <!-- 3. 用药记录 -->
         <div class="card">
             <div class="section-title">💊 用药打卡 (可拖拽调整)</div>
-            
-            <!-- 自动补全列表 -->
             <datalist id="med-history-list"></datalist>
 
             <div class="med-section" id="med-morning" ondrop="drop(event)" ondragover="allowDrop(event)">
@@ -388,7 +386,7 @@
         </div>
 
         <div class="action-buttons">
-            <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm()">取消编辑</button>
+            <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm(true)">取消编辑</button>
             <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
         </div>
     </form>
@@ -396,8 +394,6 @@
     <!-- 历史记录 -->
     <div class="history-container">
         <div class="section-title">📅 历史记录</div>
-        
-        <!-- 筛选栏 -->
         <div class="filter-bar">
             <select id="filterType" class="filter-select" onchange="toggleFilterInputs()">
                 <option value="all">📋 全部显示</option>
@@ -405,16 +401,13 @@
                 <option value="week">🗓️ 按周</option>
                 <option value="month">🈷️ 按月</option>
             </select>
-            <!-- 动态输入框 -->
             <input type="date" id="filterDate" class="filter-input" style="display:none" onchange="applyFilter()">
             <input type="week" id="filterWeek" class="filter-input" style="display:none" onchange="applyFilter()">
             <input type="month" id="filterMonth" class="filter-input" style="display:none" onchange="applyFilter()">
         </div>
-
         <div id="historyList"></div>
     </div>
 
-    <!-- 备份与恢复 -->
     <div class="backup-section">
         <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份</button>
         <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份</button>
@@ -431,17 +424,48 @@
     // --- 初始化与日期 ---
     function initDate() {
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
+        // 解决时区问题：使用本地时间构建字符串
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
         document.getElementById('dateInput').value = todayStr;
         updateWeekday();
+        checkLogForDate(todayStr); // 初始化时检查今天是否有记录
+    }
+
+    function onDateChange() {
+        updateWeekday();
+        const dateStr = document.getElementById('dateInput').value;
+        if(dateStr) checkLogForDate(dateStr);
     }
 
     function updateWeekday() {
         const dateInput = document.getElementById('dateInput');
         const display = document.getElementById('weekdayDisplay');
         if (!dateInput.value) { display.textContent = ''; return; }
+        
+        // 修复：直接解析字符串避免时区偏差
+        const parts = dateInput.value.split('-');
+        const date = new Date(parts[0], parts[1] - 1, parts[2]); 
         const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        display.textContent = days[new Date(dateInput.value).getDay()];
+        display.textContent = days[date.getDay()];
+    }
+
+    // --- 核心功能：切换日期自动加载数据 ---
+    function checkLogForDate(dateStr) {
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const existingLog = logs.find(l => l.dateStr === dateStr);
+
+        if (existingLog) {
+            // 如果该日期有记录，自动进入编辑模式
+            editLog(existingLog.id, false); // false 表示不滚动页面
+            showToast("已加载该日记录 📖");
+        } else {
+            // 如果该日期无记录，重置表单（但保留日期）
+            resetForm(false); // false 表示不重置日期
+        }
     }
 
     // --- 自动补全逻辑 ---
@@ -469,21 +493,13 @@
     // --- 拖拽逻辑 ---
     function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
     function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
-    
-    function drag(ev) {
-        draggedItem = ev.target.closest('.dynamic-row');
-        ev.dataTransfer.effectAllowed = "move";
-    }
-
+    function drag(ev) { draggedItem = ev.target.closest('.dynamic-row'); ev.dataTransfer.effectAllowed = "move"; }
     function drop(ev) {
         ev.preventDefault();
         const section = ev.currentTarget;
         section.classList.remove('drag-over');
         const list = section.querySelector('.dynamic-list');
-        if (draggedItem && list) {
-            list.appendChild(draggedItem);
-            draggedItem = null;
-        }
+        if (draggedItem && list) { list.appendChild(draggedItem); draggedItem = null; }
     }
 
     // --- 动态行操作 ---
@@ -579,18 +595,37 @@
         };
 
         let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
-        if (currentEditId) {
-            const index = logs.findIndex(l => l.id === currentEditId);
-            if (index !== -1) logs[index] = logData;
+        
+        // 检查是否已存在该日期的记录（防止重复ID或日期冲突）
+        const existingIndex = logs.findIndex(l => l.id === logData.id);
+        
+        if (existingIndex !== -1) {
+            logs[existingIndex] = logData;
             showToast("修改已保存! 📝");
         } else {
-            logs.unshift(logData);
-            showToast("记录已保存! 🐾");
+            // 如果是新ID，但日期已存在（极端情况），覆盖旧日期记录
+            const dateConflictIndex = logs.findIndex(l => l.dateStr === logData.dateStr);
+            if (dateConflictIndex !== -1) {
+                if(confirm("该日期已有记录，是否覆盖？")) {
+                    logs[dateConflictIndex] = logData;
+                    showToast("记录已覆盖! 📝");
+                } else {
+                    return;
+                }
+            } else {
+                logs.unshift(logData);
+                showToast("记录已保存! 🐾");
+            }
         }
 
         localStorage.setItem('petLogs', JSON.stringify(logs));
-        resetForm();
-        applyFilter(); // 保存后刷新列表
+        
+        // 保存后，保持在当前日期，状态改为编辑
+        currentEditId = logData.id;
+        document.getElementById('saveBtn').textContent = "💾 更新记录";
+        document.getElementById('cancelBtn').style.display = "block";
+        
+        applyFilter(); 
     }
 
     // --- 筛选逻辑 ---
@@ -599,8 +634,6 @@
         document.getElementById('filterDate').style.display = type === 'date' ? 'block' : 'none';
         document.getElementById('filterWeek').style.display = type === 'week' ? 'block' : 'none';
         document.getElementById('filterMonth').style.display = type === 'month' ? 'block' : 'none';
-        
-        // 切换回全部时，直接刷新
         if (type === 'all') applyFilter();
     }
 
@@ -613,10 +646,10 @@
             const val = document.getElementById('filterDate').value;
             if(val) filteredLogs = logs.filter(l => l.dateStr === val);
         } else if (type === 'month') {
-            const val = document.getElementById('filterMonth').value; // YYYY-MM
+            const val = document.getElementById('filterMonth').value;
             if(val) filteredLogs = logs.filter(l => l.dateStr.startsWith(val));
         } else if (type === 'week') {
-            const val = document.getElementById('filterWeek').value; // YYYY-Www
+            const val = document.getElementById('filterWeek').value;
             if(val) {
                 const [year, week] = val.split('-W');
                 const simpleDate = new Date(year, 0, 1 + (week - 1) * 7);
@@ -624,18 +657,15 @@
                 const isoWeekStart = simpleDate;
                 if (dayOfWeek <= 4) isoWeekStart.setDate(simpleDate.getDate() - simpleDate.getDay() + 1);
                 else isoWeekStart.setDate(simpleDate.getDate() + 8 - simpleDate.getDay());
-                
                 const monday = new Date(isoWeekStart);
                 const sunday = new Date(isoWeekStart);
                 sunday.setDate(monday.getDate() + 6);
-
                 filteredLogs = logs.filter(l => {
                     const d = new Date(l.dateStr);
                     return d >= monday && d <= sunday;
                 });
             }
         }
-
         renderHistory(filteredLogs);
     }
 
@@ -643,7 +673,6 @@
     function renderHistory(logsToRender) {
         const container = document.getElementById('historyList');
         let logs = logsToRender || JSON.parse(localStorage.getItem('petLogs') || '[]');
-        
         logs.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
         container.innerHTML = '';
 
@@ -653,7 +682,6 @@
         }
 
         logs.forEach(log => {
-            // 体温
             let tempHtml = '';
             if (Array.isArray(log.temps) && log.temps.length > 0) {
                 const tempList = log.temps.map(t => `<div>🕒 ${t.time} &nbsp; 🌡️ <b>${t.val}℃</b></div>`).join('');
@@ -662,7 +690,6 @@
                 tempHtml = `<div>🌡️ ${log.temp}℃</div>`;
             }
 
-            // 药品
             let medHtml = '';
             const hasMeds = log.meds && (log.meds.morning?.length || log.meds.noon?.length || log.meds.evening?.length);
             if (hasMeds) {
@@ -674,36 +701,17 @@
                 medHtml = `<details><summary>💊 用药详情</summary><div class="details-content">${content}</div></details>`;
             }
 
-            // 标签生成
             const getTag = (val, type) => {
                 if(!val) return '';
                 let cls = 'tag-neutral';
                 let icon = '';
                 let suffix = '';
-
-                if(type === 'stool') {
-                    icon = '💩';
-                    cls = val==='正常'?'tag-good':(val==='无便'?'tag-neutral':'tag-bad');
-                }
-                if(type === 'mental') {
-                    icon = '🧠';
-                    cls = val==='良好'?'tag-good':(val==='一般'?'tag-warn':'tag-bad');
-                    if(val==='良好') suffix='☀️';
-                    if(val==='一般') suffix='☁️';
-                    if(val==='不佳') suffix='🌧️';
-                }
-                if(type === 'appetite') {
-                    icon = '🍖';
-                    cls = (val==='正常'||val==='多食')?'tag-good':'tag-bad';
-                    if(val==='多食') suffix='🍗';
-                    if(val==='正常') suffix='🦴';
-                    if(val==='不佳') suffix='🥣';
-                }
-
+                if(type === 'stool') { icon = '💩'; cls = val==='正常'?'tag-good':(val==='无便'?'tag-neutral':'tag-bad'); }
+                if(type === 'mental') { icon = '🧠'; cls = val==='良好'?'tag-good':(val==='一般'?'tag-warn':'tag-bad'); if(val==='良好') suffix='☀️'; if(val==='一般') suffix='☁️'; if(val==='不佳') suffix='🌧️'; }
+                if(type === 'appetite') { icon = '🍖'; cls = (val==='正常'||val==='多食')?'tag-good':'tag-bad'; if(val==='多食') suffix='🍗'; if(val==='正常') suffix='🦴'; if(val==='不佳') suffix='🥣'; }
                 return `<span class="tag ${cls}">${icon} ${val} ${suffix}</span>`;
             };
 
-            // 食欲趋势
             let trendHtml = '';
             if (log.appetiteTrend && log.appetiteTrend.length) {
                 trendHtml = log.appetiteTrend.map(t => `<span class="tag tag-trend">${t}</span>`).join(' ');
@@ -714,7 +722,7 @@
                     <div class="history-header">
                         <div class="history-date">${log.dateStr} <small style="color:#888">${log.weekday}</small></div>
                         <div class="history-actions">
-                            <span style="color:#2196F3" onclick="editLog(${log.id})">✏️</span>
+                            <span style="color:#2196F3" onclick="editLog(${log.id}, true)">✏️</span>
                             <span style="color:#FF5252" onclick="deleteLog(${log.id})">🗑️</span>
                         </div>
                     </div>
@@ -737,12 +745,13 @@
     }
 
     // --- 编辑与删除 ---
-    function editLog(id) {
+    function editLog(id, scroll = true) {
         const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
         const log = logs.find(l => l.id === id);
         if (!log) return;
 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if(scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+        
         currentEditId = log.id;
         document.getElementById('saveBtn').textContent = "💾 更新记录";
         document.getElementById('cancelBtn').style.display = "block";
@@ -786,15 +795,23 @@
             let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
             logs = logs.filter(l => l.id !== id);
             localStorage.setItem('petLogs', JSON.stringify(logs));
-            if (currentEditId === id) resetForm();
-            applyFilter(); // 刷新列表
+            if (currentEditId === id) resetForm(true);
+            applyFilter();
         }
     }
 
-    function resetForm() {
+    function resetForm(resetDate = true) {
+        const currentDate = document.getElementById('dateInput').value;
         document.getElementById('petForm').reset();
         document.querySelectorAll('.dynamic-list').forEach(el => el.innerHTML = '');
-        initDate();
+        
+        if (resetDate) {
+            initDate();
+        } else {
+            document.getElementById('dateInput').value = currentDate;
+            updateWeekday();
+        }
+        
         currentEditId = null;
         document.getElementById('saveBtn').textContent = "💾 保存记录";
         document.getElementById('cancelBtn').style.display = "none";
@@ -806,16 +823,11 @@
         setTimeout(() => t.style.display = 'none', 2000);
     }
 
-    // --- 备份与恢复功能 ---
+    // --- 备份与恢复 ---
     function exportData() {
         const logs = localStorage.getItem('petLogs') || '[]';
         const history = localStorage.getItem('medHistory') || '[]';
-        const data = {
-            logs: JSON.parse(logs),
-            medHistory: JSON.parse(history),
-            exportDate: new Date().toISOString()
-        };
-        
+        const data = { logs: JSON.parse(logs), medHistory: JSON.parse(history), exportDate: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -830,27 +842,16 @@
     function importData(input) {
         const file = input.files[0];
         if (!file) return;
-
-        if (!confirm('⚠️ 恢复备份将覆盖当前所有记录，确定要继续吗？')) {
-            input.value = '';
-            return;
-        }
-
+        if (!confirm('⚠️ 恢复备份将覆盖当前所有记录，确定要继续吗？')) { input.value = ''; return; }
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if (data.logs) {
-                    localStorage.setItem('petLogs', JSON.stringify(data.logs));
-                }
-                if (data.medHistory) {
-                    localStorage.setItem('medHistory', JSON.stringify(data.medHistory));
-                }
+                if (data.logs) localStorage.setItem('petLogs', JSON.stringify(data.logs));
+                if (data.medHistory) localStorage.setItem('medHistory', JSON.stringify(data.medHistory));
                 showToast("备份恢复成功! 🎉");
                 setTimeout(() => location.reload(), 1000);
-            } catch (err) {
-                alert('文件格式错误，无法恢复！');
-            }
+            } catch (err) { alert('文件格式错误，无法恢复！'); }
         };
         reader.readAsText(file);
     }
@@ -858,7 +859,7 @@
     window.onload = function() {
         initDate();
         updateMedDatalist();
-        applyFilter(); // 初始化加载列表
+        applyFilter();
     };
 </script>
 </body>
