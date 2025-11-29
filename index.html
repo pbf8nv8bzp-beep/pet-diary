@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🐾 萌宠健康日记</title>
+    
+    <!-- 网页适配文件引用 -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FF9A9E">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="manifest" href="manifest.json">
+
     <style>
         :root {
             --primary-color: #FF9A9E;
@@ -100,10 +102,12 @@
         .input-group { flex: 1; min-width: 200px; }
         label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #666; }
 
-        input[type="text"], input[type="number"], input[type="time"] {
+        /* 通用输入框样式 */
+        input[type="text"], input[type="number"], input[type="time"], input[type="date"], input[type="month"], input[type="week"] {
             width: 100%; padding: 10px; border: 2px solid #eee;
             border-radius: 10px; font-size: 1rem; outline: none;
             transition: border-color 0.3s; box-sizing: border-box;
+            background: white;
         }
         input:focus { border-color: var(--primary-color); }
 
@@ -175,7 +179,49 @@
             border-radius: 50px; color: #666; font-weight: bold; cursor: pointer; display: none;
         }
 
-        /* 历史记录 */
+        /* --- 历史记录与筛选 (美化版) --- */
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.8); 
+            padding: 10px; border-radius: 16px;
+            border: 2px solid white;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.1);
+        }
+
+        /* 美化下拉框和筛选输入框 */
+        .filter-select, .filter-input {
+            flex: 1;
+            border: 2px solid #FECFEF; /* 浅粉色边框 */
+            border-radius: 20px; /* 圆角 */
+            padding: 8px 15px;
+            font-size: 0.95rem;
+            color: #666;
+            outline: none;
+            background-color: white;
+            transition: all 0.3s;
+            cursor: pointer;
+            /* 去掉默认丑陋的箭头 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* 给下拉框加一个可爱的粉色箭头 */
+        .filter-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FF9A9E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            padding-right: 30px;
+        }
+
+        .filter-select:focus, .filter-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 154, 158, 0.2);
+        }
+
+        .filter-input { flex: 2; }
+
         .history-item {
             background: white; border-radius: 12px; padding: 15px;
             margin-bottom: 15px; border-left: 5px solid var(--primary-color);
@@ -350,6 +396,21 @@
     <!-- 历史记录 -->
     <div class="history-container">
         <div class="section-title">📅 历史记录</div>
+        
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+            <select id="filterType" class="filter-select" onchange="toggleFilterInputs()">
+                <option value="all">📋 全部显示</option>
+                <option value="date">📅 按日期</option>
+                <option value="week">🗓️ 按周</option>
+                <option value="month">🈷️ 按月</option>
+            </select>
+            <!-- 动态输入框 -->
+            <input type="date" id="filterDate" class="filter-input" style="display:none" onchange="applyFilter()">
+            <input type="week" id="filterWeek" class="filter-input" style="display:none" onchange="applyFilter()">
+            <input type="month" id="filterMonth" class="filter-input" style="display:none" onchange="applyFilter()">
+        </div>
+
         <div id="historyList"></div>
     </div>
 
@@ -529,18 +590,65 @@
 
         localStorage.setItem('petLogs', JSON.stringify(logs));
         resetForm();
-        renderHistory();
+        applyFilter(); // 保存后刷新列表
+    }
+
+    // --- 筛选逻辑 ---
+    function toggleFilterInputs() {
+        const type = document.getElementById('filterType').value;
+        document.getElementById('filterDate').style.display = type === 'date' ? 'block' : 'none';
+        document.getElementById('filterWeek').style.display = type === 'week' ? 'block' : 'none';
+        document.getElementById('filterMonth').style.display = type === 'month' ? 'block' : 'none';
+        
+        // 切换回全部时，直接刷新
+        if (type === 'all') applyFilter();
+    }
+
+    function applyFilter() {
+        const type = document.getElementById('filterType').value;
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        let filteredLogs = logs;
+
+        if (type === 'date') {
+            const val = document.getElementById('filterDate').value;
+            if(val) filteredLogs = logs.filter(l => l.dateStr === val);
+        } else if (type === 'month') {
+            const val = document.getElementById('filterMonth').value; // YYYY-MM
+            if(val) filteredLogs = logs.filter(l => l.dateStr.startsWith(val));
+        } else if (type === 'week') {
+            const val = document.getElementById('filterWeek').value; // YYYY-Www
+            if(val) {
+                const [year, week] = val.split('-W');
+                const simpleDate = new Date(year, 0, 1 + (week - 1) * 7);
+                const dayOfWeek = simpleDate.getDay();
+                const isoWeekStart = simpleDate;
+                if (dayOfWeek <= 4) isoWeekStart.setDate(simpleDate.getDate() - simpleDate.getDay() + 1);
+                else isoWeekStart.setDate(simpleDate.getDate() + 8 - simpleDate.getDay());
+                
+                const monday = new Date(isoWeekStart);
+                const sunday = new Date(isoWeekStart);
+                sunday.setDate(monday.getDate() + 6);
+
+                filteredLogs = logs.filter(l => {
+                    const d = new Date(l.dateStr);
+                    return d >= monday && d <= sunday;
+                });
+            }
+        }
+
+        renderHistory(filteredLogs);
     }
 
     // --- 渲染历史记录 ---
-    function renderHistory() {
+    function renderHistory(logsToRender) {
         const container = document.getElementById('historyList');
-        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        let logs = logsToRender || JSON.parse(localStorage.getItem('petLogs') || '[]');
+        
         logs.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
         container.innerHTML = '';
 
         if (logs.length === 0) {
-            container.innerHTML = '<p style="text-align:center;color:#999;">暂无记录 🐱</p>';
+            container.innerHTML = '<p style="text-align:center;color:#999;">暂无符合条件的记录 🐱</p>';
             return;
         }
 
@@ -679,7 +787,7 @@
             logs = logs.filter(l => l.id !== id);
             localStorage.setItem('petLogs', JSON.stringify(logs));
             if (currentEditId === id) resetForm();
-            renderHistory();
+            applyFilter(); // 刷新列表
         }
     }
 
@@ -750,7 +858,7 @@
     window.onload = function() {
         initDate();
         updateMedDatalist();
-        renderHistory();
+        applyFilter(); // 初始化加载列表
     };
 </script>
 </body>
