@@ -2,8 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐾 萌宠每日健康日记</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐾 萌宠健康日记</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF9A9E">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
             --primary-color: #FF9A9E;
@@ -12,8 +18,23 @@
             --text-color: #555;
             --bg-color: #fdfbf7;
             --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --border-color: #eee;
             --shadow: 0 8px 20px rgba(255, 154, 158, 0.2);
             --radius: 16px;
+            --nav-height: 60px;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #ffb7b9;
+            --secondary-color: #4a3b42;
+            --accent-color: #c4b0f5;
+            --text-color: #e0e0e0;
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --input-bg: #333333;
+            --border-color: #444444;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
 
         body {
@@ -23,338 +44,308 @@
             background-size: 20px 20px;
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 0;
             line-height: 1.6;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px 20px 90px 20px;
         }
 
-        /* 头部样式 */
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             background: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
-            padding: 20px;
+            padding: 15px;
             border-radius: var(--radius);
             color: white;
             box-shadow: var(--shadow);
             position: relative;
-            overflow: hidden;
         }
 
-        header h1 {
-            margin: 0 0 10px 0;
-            font-size: 1.8rem;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
+        header h1 { margin: 0 0 5px 0; font-size: 1.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
 
         .date-wrapper {
             display: inline-flex;
             align-items: center;
             background: rgba(255,255,255,0.25);
-            padding: 5px 15px;
+            padding: 4px 12px;
             border-radius: 20px;
             backdrop-filter: blur(5px);
         }
 
-        .date-input {
+        #dateInput {
             background: transparent;
             border: none;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-family: inherit;
             cursor: pointer;
             outline: none;
+            width: auto;
+            box-shadow: none;
         }
-        
-        /* 修改日期选择器图标颜色 */
-        .date-input::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            cursor: pointer;
-        }
+        #dateInput::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .weekday-display { margin-left: 10px; font-weight: bold; font-size: 0.9rem; }
 
-        .weekday-display {
-            margin-left: 10px;
+        /* 提醒横幅 */
+        .reminder-banner {
+            background: rgba(255, 255, 255, 0.95);
+            color: #d45d79;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
             font-weight: bold;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            animation: pulse 2s infinite;
         }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-        /* 卡片通用样式 */
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
-            padding: 25px;
-            margin-bottom: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
             box-shadow: var(--shadow);
-            border: 2px solid white;
-            transition: transform 0.2s;
+            border: 2px solid var(--bg-color);
+            transition: background 0.3s;
         }
 
         .section-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--primary-color);
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             font-weight: bold;
         }
-
         .section-title::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 20px;
-            background: var(--primary-color);
-            margin-right: 10px;
-            border-radius: 4px;
+            content: ''; display: inline-block; width: 6px; height: 18px;
+            background: var(--primary-color); margin-right: 10px; border-radius: 4px;
         }
 
-        /* 表单元素 */
-        .form-row {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
+        .form-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 100%; }
+        @media(min-width: 600px) { .input-group { min-width: 200px; } }
+        
+        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-color); opacity: 0.8; }
 
-        .input-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-            color: #666;
-        }
-
-        input[type="text"], 
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #eee;
-            border-radius: 12px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
+        input[type="text"], input[type="number"], input[type="time"], input[type="date"], select {
+            width: 100%; padding: 10px; border: 2px solid var(--border-color);
+            border-radius: 10px; font-size: 1rem; outline: none;
+            transition: border-color 0.3s, background 0.3s, color 0.3s; 
             box-sizing: border-box;
+            background: var(--input-bg);
+            color: var(--text-color);
         }
+        input:focus, select:focus { border-color: var(--primary-color); }
 
-        input:focus {
-            border-color: var(--primary-color);
+        .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .radio-label { cursor: pointer; position: relative; }
+        .radio-label input { display: none; }
+        .radio-label span {
+            display: inline-block; padding: 6px 12px; 
+            background: var(--bg-color);
+            border-radius: 20px; font-size: 0.85rem; transition: all 0.3s;
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
         }
-
-        /* 选项标签样式 */
-        .radio-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .radio-label input:checked + span {
+            background: var(--secondary-color); color: #d45d79;
+            border-color: var(--primary-color); font-weight: bold;
         }
+        [data-theme="dark"] .radio-label input:checked + span { color: #ff9a9e; }
 
-        .radio-label {
-            cursor: pointer;
+        .dynamic-list { display: flex; flex-direction: column; gap: 8px; min-height: 10px; }
+        .dynamic-row {
+            display: flex; gap: 4px; align-items: center;
+            background: var(--bg-color); padding: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color); transition: background 0.2s;
             position: relative;
         }
 
-        .radio-label input {
-            display: none;
+        .dynamic-row input, .dynamic-row select {
+            padding: 6px 4px;
+            font-size: 0.9rem; height: 36px;
         }
-
-        .radio-label span {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #f0f0f0;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-            border: 2px solid transparent;
+        
+        .drag-handle {
+            cursor: move; color: #ccc; font-size: 1.4rem; padding: 0 2px;
+            user-select: none; touch-action: none;
         }
-
-        .radio-label input:checked + span {
-            background: var(--secondary-color);
-            color: #d45d79;
-            border-color: var(--primary-color);
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
+        .drag-handle:active { color: var(--primary-color); }
+        
+        .dragging-clone {
+            position: fixed; z-index: 9999; background: var(--card-bg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0.9;
+            pointer-events: none; border: 2px solid var(--primary-color);
+            border-radius: 8px; padding: 8px; width: 90%; max-width: 350px;
+            color: var(--text-color);
         }
-
-        /* 药品部分 */
+        
         .med-section {
-            background: #fff9fa;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px dashed var(--primary-color);
+            background: var(--bg-color); border-radius: 12px; padding: 10px;
+            margin-bottom: 10px; border: 1px dashed var(--primary-color);
+            transition: all 0.2s;
         }
+        .med-section.drag-over { border-style: solid; transform: scale(1.02); opacity: 0.8; }
+        .med-time-title { font-weight: bold; color: var(--text-color); opacity: 0.6; margin-bottom: 8px; font-size: 0.9rem; }
 
-        .med-time-title {
-            font-weight: bold;
-            color: #888;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* 宽度调整 */
+        .row-time { width: 85px; }
+        .row-val { width: 70px; }
+        .row-name { flex: 1; min-width: 60px; }
+        .row-qty { width: 45px; text-align: center; padding: 6px 2px !important; }
+        .row-unit { width: 55px; padding: 6px 0 !important; text-align: center; }
 
-        .med-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .med-row input {
-            padding: 8px;
-            font-size: 0.9rem;
-        }
-
-        .med-name { flex: 2; }
-        .med-spec { flex: 1; }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 5px;
-            transition: transform 0.2s;
-        }
-
-        .btn-icon:hover { transform: scale(1.2); }
-        .btn-add { color: #4CAF50; }
+        .btn-icon { background: none; border: none; font-size: 1.1rem; padding: 5px; color: #999; }
         .btn-del { color: #FF5252; }
         .btn-copy { color: #2196F3; }
-
-        .btn-add-med {
-            background: white;
-            border: 1px dashed #ccc;
-            width: 100%;
-            padding: 8px;
-            border-radius: 8px;
-            color: #888;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-        .btn-add-med:hover {
-            background: #f5f5f5;
-            color: var(--primary-color);
-            border-color: var(--primary-color);
+        .btn-add-row {
+            background: var(--card-bg); border: 1px dashed #ccc; width: 100%;
+            padding: 8px; border-radius: 8px; color: #888; margin-top: 5px; font-size: 0.9rem;
         }
 
-        /* 按钮组 */
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
+        .top-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .btn-small {
+            padding: 6px 12px; border-radius: 20px; border: 1px solid var(--primary-color);
+            background: white; color: var(--primary-color); font-size: 0.85rem; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
         }
+        [data-theme="dark"] .btn-small { background: #333; }
 
+        .input-with-btn { display: flex; gap: 8px; align-items: center; }
+
+        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .save-btn {
-            flex: 2;
-            padding: 15px;
-            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
+            flex: 2; padding: 15px; border: none; border-radius: 50px;
+            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 100%);
+            color: white; font-size: 1.1rem; font-weight: bold;
             box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .save-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.6);
-        }
-
         .cancel-btn {
-            flex: 1;
-            padding: 15px;
-            background: #e0e0e0;
-            border: none;
-            border-radius: 50px;
-            color: #666;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            display: none; /* 默认隐藏，编辑模式显示 */
+            flex: 1; padding: 15px; background: #e0e0e0; border: none;
+            border-radius: 50px; color: #666; font-weight: bold; display: none;
         }
 
-        /* 历史记录 */
-        .history-container {
-            margin-top: 40px;
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 10px; right: 10px; width: auto;
+            height: var(--nav-height); background: var(--card-bg);
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100;
+            border-radius: 20px; margin-bottom: 10px;
+            border: 1px solid var(--border-color);
         }
-        
+        .nav-item {
+            flex: 1; text-align: center; color: #999;
+            font-size: 0.8rem; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary-color); font-weight: bold; }
+        .nav-item.active .nav-icon { transform: scale(1.1); transition: transform 0.2s; }
+
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.8); 
+            padding: 10px; border-radius: 16px;
+            border: 2px solid white;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.1);
+        }
+        [data-theme="dark"] .filter-bar { background: #333; border-color: #444; }
+
+        .filter-select, .filter-input {
+            flex: 1; border: 2px solid #FECFEF; border-radius: 20px;
+            padding: 8px 15px; font-size: 0.9rem; color: #666;
+            background-color: white; outline: none;
+            -webkit-appearance: none; appearance: none;
+        }
+        .filter-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FF9A9E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            background-size: 16px; padding-right: 30px;
+        }
+        .filter-input { flex: 2; }
+
         .history-item {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-left: 5px solid var(--primary-color);
-            position: relative;
+            background: var(--card-bg); border-radius: 12px; padding: 15px;
+            margin-bottom: 15px; border-left: 5px solid var(--primary-color);
         }
-
         .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 10px;
         }
-
-        .history-date {
-            font-weight: bold;
-            color: var(--accent-color);
-            font-size: 1.05rem;
-        }
-
-        .history-actions span {
-            cursor: pointer;
-            font-size: 0.85rem;
-            margin-left: 10px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: #f5f5f5;
-        }
-
-        .btn-edit-log { color: #2196F3; }
-        .btn-del-log { color: #FF5252; }
-
-        .history-content {
-            font-size: 0.9rem;
-            color: #666;
-        }
+        .history-date { font-weight: bold; color: var(--accent-color); }
         
-        .tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-            color: white;
-        }
+        details { margin-top: 8px; background: var(--bg-color); border-radius: 8px; overflow: hidden; }
+        summary { padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-color); font-weight: bold; display: flex; align-items: center; outline: none; }
+        summary::after { content: '▼'; font-size: 0.7rem; margin-left: auto; transition: transform 0.2s; }
+        details[open] summary::after { transform: rotate(180deg); }
+        .details-content { padding: 10px 12px; border-top: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-color); opacity: 0.9; }
+
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; color: white; }
         .tag-good { background-color: #4CAF50; }
         .tag-warn { background-color: #FFC107; color: #555; }
         .tag-bad { background-color: #FF5252; }
         .tag-neutral { background-color: #9E9E9E; }
+        .tag-trend { background-color: #2196F3; }
 
-        /* 弹窗提示 */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            display: none;
-            z-index: 1000;
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid var(--border-color);
         }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-label { font-weight: bold; color: var(--text-color); }
+        
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background-color: white;
+            transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .backup-section { text-align: center; padding: 20px; }
+        .backup-btn {
+            padding: 12px 25px; border-radius: 25px; border: 1px solid #ccc;
+            background: var(--card-bg); color: var(--text-color); margin: 10px; font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer;
+        }
+
+        .toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+            border-radius: 20px; display: none; z-index: 1000;
+        }
+        
+        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 20px; }
+
+        /* v1.12 新增样式 */
+        .vac-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+        }
+        .vac-label { width: 50px; font-weight: bold; font-size: 0.9rem; color: var(--primary-color); }
+        .vac-input { flex: 1; }
+        .vac-hint { font-size: 0.8rem; color: #999; margin-left: 60px; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -363,370 +354,950 @@
     <header>
         <h1>🐾 萌宠健康日记</h1>
         <div class="date-wrapper">
-            <input type="date" id="dateInput" class="date-input" onchange="updateWeekday()">
+            <input type="date" id="dateInput" onchange="onDateChange()">
             <span id="weekdayDisplay" class="weekday-display"></span>
         </div>
+        <div id="reminderBanner" class="reminder-banner"></div>
     </header>
 
-    <form id="petForm">
-        <!-- 基础数据 -->
-        <div class="card">
-            <div class="section-title">今日体征</div>
-            <div class="form-row">
-                <div class="input-group">
-                    <label>🌡️ 体温 (℃)</label>
-                    <input type="number" step="0.1" id="temperature" placeholder="例如: 38.5">
-                </div>
-                <div class="input-group">
-                    <label>⚖️ 体重 (kg)</label>
-                    <input type="number" step="0.01" id="weight" placeholder="例如: 5.2">
-                </div>
-            </div>
+    <!-- Tab 1: 今日打卡 -->
+    <div id="tab-record" class="tab-content active">
+        <div class="top-actions">
+            <button type="button" class="btn-small" onclick="copyYesterday()">
+                📋 复制昨天记录
+            </button>
         </div>
 
-        <!-- 状态勾选 -->
-        <div class="card">
-            <div class="section-title">状态记录</div>
-            
-            <div class="form-row">
+        <form id="petForm">
+            <!-- 1. 体温与体重 -->
+            <div class="card">
+                <div class="section-title">今日体征</div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>⚖️ 体重 (kg)</label>
+                        <input type="number" step="0.01" id="weight" placeholder="例如: 5.2">
+                    </div>
+                </div>
                 <div class="input-group">
-                    <label>💩 大便状态</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="stool" value="正常"><span>正常</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="无便"><span>无便</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="软便"><span>软便</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="拉稀"><span>拉稀</span></label>
-                        <label class="radio-label"><input type="radio" name="stool" value="便血"><span>便血</span></label>
+                    <label>🌡️ 体温记录 (可多次)</label>
+                    <div id="temp-list" class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addTempRow()">+ 添加体温记录</button>
+                </div>
+            </div>
+
+            <!-- 2. 状态勾选 -->
+            <div class="card">
+                <div class="section-title">状态记录</div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>💩 大便状态</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="stool" value="正常"><span>正常</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="无便"><span>无便</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="软便"><span>软便</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="拉稀"><span>拉稀</span></label>
+                            <label class="radio-label"><input type="radio" name="stool" value="便血"><span>便血</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>🧠 精神状态</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="mental" value="良好"><span>良好 ☀️</span></label>
+                            <label class="radio-label"><input type="radio" name="mental" value="一般"><span>一般 ☁️</span></label>
+                            <label class="radio-label"><input type="radio" name="mental" value="不佳"><span>不佳 🌧️</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>🍖 食欲情况</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="appetite" value="多食"><span>多食 🍗</span></label>
+                            <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
+                            <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
+                        </div>
+                        <div class="radio-group" style="margin-top: 8px;">
+                            <label class="radio-label"><input type="checkbox" name="appetite_trend" value="上升"><span>📈 上升</span></label>
+                            <label class="radio-label"><input type="checkbox" name="appetite_trend" value="下降"><span>📉 下降</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>📝 特殊情况 (选填)</label>
+                        <input type="text" id="special" placeholder="例如: 呕吐、咳嗽等备注">
                     </div>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label>🧠 精神状态</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="mental" value="良好"><span>良好 ☀️</span></label>
-                        <label class="radio-label"><input type="radio" name="mental" value="一般"><span>一般 ☁️</span></label>
-                        <label class="radio-label"><input type="radio" name="mental" value="不佳"><span>不佳 🌧️</span></label>
-                    </div>
+            <!-- 3. 用药记录 -->
+            <div class="card">
+                <div class="section-title">💊 用药打卡 (长按拖拽)</div>
+                <datalist id="med-history-list"></datalist>
+
+                <div class="med-section" id="med-morning">
+                    <div class="med-time-title">🌅 早上</div>
+                    <div class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addMedRow('med-morning')">+ 添加药品</button>
+                </div>
+
+                <div class="med-section" id="med-noon">
+                    <div class="med-time-title">☀️ 中午</div>
+                    <div class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addMedRow('med-noon')">+ 添加药品</button>
+                </div>
+
+                <div class="med-section" id="med-evening">
+                    <div class="med-time-title">🌙 晚上</div>
+                    <div class="dynamic-list"></div>
+                    <button type="button" class="btn-add-row" onclick="addMedRow('med-evening')">+ 添加药品</button>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label>🍖 食欲情况</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="appetite" value="多食"><span>多食 🍗</span></label>
-                        <label class="radio-label"><input type="radio" name="appetite" value="正常"><span>正常 🦴</span></label>
-                        <label class="radio-label"><input type="radio" name="appetite" value="不佳"><span>不佳 🥣</span></label>
-                    </div>
-                </div>
+            <div class="action-buttons">
+                <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm(true)">取消编辑</button>
+                <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
             </div>
-        </div>
+        </form>
+    </div>
 
-        <!-- 用药记录 -->
-        <div class="card">
-            <div class="section-title">💊 用药打卡</div>
-            
-            <!-- 早 -->
-            <div class="med-section" id="med-morning">
-                <div class="med-time-title">🌅 早上</div>
-                <div class="med-list"></div>
-                <button type="button" class="btn-add-med" onclick="addMedRow('med-morning')">+ 添加药品</button>
-            </div>
-
-            <!-- 中 -->
-            <div class="med-section" id="med-noon">
-                <div class="med-time-title">☀️ 中午</div>
-                <div class="med-list"></div>
-                <button type="button" class="btn-add-med" onclick="addMedRow('med-noon')">+ 添加药品</button>
-            </div>
-
-            <!-- 晚 -->
-            <div class="med-section" id="med-evening">
-                <div class="med-time-title">🌙 晚上</div>
-                <div class="med-list"></div>
-                <button type="button" class="btn-add-med" onclick="addMedRow('med-evening')">+ 添加药品</button>
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button type="button" class="cancel-btn" id="cancelBtn" onclick="resetForm()">取消编辑</button>
-            <button type="button" class="save-btn" id="saveBtn" onclick="saveLog()">💾 保存记录</button>
-        </div>
-    </form>
-
-    <!-- 历史记录 -->
-    <div class="history-container">
+    <!-- Tab 2: 历史记录 -->
+    <div id="tab-history" class="tab-content">
         <div class="section-title">📅 历史记录</div>
+        <div class="filter-bar">
+            <select id="filterType" class="filter-select" onchange="toggleFilterInputs()">
+                <option value="all">📋 全部显示</option>
+                <option value="date">📅 按日期</option>
+                <option value="week">🗓️ 按周</option>
+                <option value="month">🈷️ 按月</option>
+            </select>
+            <input type="date" id="filterDate" class="filter-input" style="display:none" onchange="applyFilter()">
+            <input type="week" id="filterWeek" class="filter-input" style="display:none" onchange="applyFilter()">
+            <input type="month" id="filterMonth" class="filter-input" style="display:none" onchange="applyFilter()">
+        </div>
         <div id="historyList"></div>
     </div>
+
+    <!-- Tab 3: 统计图表 -->
+    <div id="tab-stats" class="tab-content">
+        <div class="section-title">📊 健康趋势</div>
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: 设置与备份 (v1.12 Redesigned) -->
+    <div id="tab-settings" class="tab-content">
+        <div class="card">
+            <div class="section-title">🎨 个性化</div>
+            <div class="setting-row">
+                <span class="setting-label">🌙 深色模式</span>
+                <label class="switch">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 核心疫苗设置 -->
+        <div class="card">
+            <div class="section-title">💉 核心疫苗 (三联/四联)</div>
+            <small class="vac-hint">输入第1针日期，自动生成后续计划 (间隔21天)</small>
+            
+            <div class="vac-row">
+                <span class="vac-label">第1针</span>
+                <input type="date" id="vac1" class="vac-input" onchange="autoCalcVaccine()">
+                <button type="button" class="btn-small" onclick="delayVaccine(0)">⏱️推迟</button>
+            </div>
+            
+            <div class="vac-row">
+                <span class="vac-label">第2针</span>
+                <input type="date" id="vac2" class="vac-input" onchange="saveReminders()">
+                <button type="button" class="btn-small" onclick="delayVaccine(1)">⏱️推迟</button>
+            </div>
+            
+            <div class="vac-row">
+                <span class="vac-label">第3针</span>
+                <input type="date" id="vac3" class="vac-input" onchange="saveReminders()">
+                <button type="button" class="btn-small" onclick="delayVaccine(2)">⏱️推迟</button>
+            </div>
+        </div>
+
+        <!-- 狂犬疫苗设置 -->
+        <div class="card">
+            <div class="section-title">🐕 狂犬疫苗</div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>接种日期</label>
+                    <input type="date" id="rabiesDate" onchange="saveReminders()">
+                </div>
+            </div>
+        </div>
+
+        <!-- 驱虫设置 -->
+        <div class="card">
+            <div class="section-title">🐛 驱虫提醒</div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>上次驱虫日期</label>
+                    <div class="input-with-btn">
+                        <input type="date" id="lastDewormDate" onchange="saveReminders()">
+                        <button type="button" class="btn-small" onclick="delayDeworm()">⏱️推迟</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>周期 (天)</label>
+                    <input type="number" id="dewormCycle" value="30" onchange="saveReminders()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">⚙️ 数据管理</div>
+            <p style="color:var(--text-color); opacity:0.7; font-size:0.9rem; text-align:center;">数据存储在本地，请定期备份。</p>
+            <div class="backup-section">
+                <button type="button" class="backup-btn" onclick="exportData()">📤 导出备份</button>
+                <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">📥 恢复备份</button>
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(this)">
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<!-- 底部导航栏 -->
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('tab-record', this)">
+        <div class="nav-icon">📝</div>
+        <div>打卡</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-history', this)">
+        <div class="nav-icon">📅</div>
+        <div>历史</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-stats', this)">
+        <div class="nav-icon">📊</div>
+        <div>统计</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-settings', this)">
+        <div class="nav-icon">⚙️</div>
+        <div>设置</div>
+    </div>
+</nav>
 
 <div class="toast" id="toast">记录已保存! 🐾</div>
 
 <script>
-    let currentEditId = null; // 用于追踪当前是否在编辑模式
+    let currentEditId = null;
+    let draggedItem = null;
+    let weightChartInstance = null;
+    let tempChartInstance = null;
 
-    // 初始化日期
+    // --- 视图切换 ---
+    function switchTab(tabId, navEl) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if(navEl) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            navEl.classList.add('active');
+        }
+        window.scrollTo(0, 0);
+        if(tabId === 'tab-stats') renderCharts();
+    }
+
+    // --- 深色模式 ---
+    function initTheme() {
+        const isDark = localStorage.getItem('darkMode') === 'true';
+        document.getElementById('darkModeToggle').checked = isDark;
+        applyTheme(isDark);
+    }
+
+    function toggleDarkMode() {
+        const isDark = document.getElementById('darkModeToggle').checked;
+        localStorage.setItem('darkMode', isDark);
+        applyTheme(isDark);
+        if(document.getElementById('tab-stats').classList.contains('active')) renderCharts();
+    }
+
+    function applyTheme(isDark) {
+        if(isDark) document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
+    }
+
+    // --- 提醒逻辑 (v1.12 Redesigned) ---
+    function loadReminders() {
+        const data = JSON.parse(localStorage.getItem('petReminders') || '{}');
+        
+        // 核心疫苗 (兼容旧数据)
+        if(data.vaccine && data.vaccine.dates) {
+            document.getElementById('vac1').value = data.vaccine.dates[0] || '';
+            document.getElementById('vac2').value = data.vaccine.dates[1] || '';
+            document.getElementById('vac3').value = data.vaccine.dates[2] || '';
+        } else if (data.vaccine && data.vaccine.date) {
+            // 旧版迁移：把旧的单次日期作为第1针
+            document.getElementById('vac1').value = data.vaccine.date;
+            autoCalcVaccine(); // 自动生成后两针
+        }
+
+        // 狂犬
+        if(data.rabies) {
+            document.getElementById('rabiesDate').value = data.rabies.date || '';
+        }
+
+        // 驱虫
+        if(data.deworm) {
+            document.getElementById('lastDewormDate').value = data.deworm.date || '';
+            document.getElementById('dewormCycle').value = data.deworm.cycle || 30;
+        }
+        
+        checkReminders(data);
+    }
+
+    function saveReminders() {
+        const data = {
+            vaccine: {
+                type: 'multi',
+                dates: [
+                    document.getElementById('vac1').value,
+                    document.getElementById('vac2').value,
+                    document.getElementById('vac3').value
+                ]
+            },
+            rabies: {
+                date: document.getElementById('rabiesDate').value
+            },
+            deworm: {
+                date: document.getElementById('lastDewormDate').value,
+                cycle: document.getElementById('dewormCycle').value
+            }
+        };
+        localStorage.setItem('petReminders', JSON.stringify(data));
+        checkReminders(data);
+    }
+
+    // 自动计算疫苗日期 (间隔21天)
+    function autoCalcVaccine() {
+        const v1 = document.getElementById('vac1').value;
+        if(!v1) return;
+        
+        const d1 = new Date(v1);
+        
+        // 计算第2针 (+21天)
+        const d2 = new Date(d1);
+        d2.setDate(d1.getDate() + 21);
+        document.getElementById('vac2').value = d2.toISOString().split('T')[0];
+
+        // 计算第3针 (+42天)
+        const d3 = new Date(d1);
+        d3.setDate(d1.getDate() + 42);
+        document.getElementById('vac3').value = d3.toISOString().split('T')[0];
+
+        saveReminders();
+    }
+
+    // 疫苗推迟逻辑 (级联推迟)
+    function delayVaccine(index) {
+        const ids = ['vac1', 'vac2', 'vac3'];
+        const currentInput = document.getElementById(ids[index]);
+        if(!currentInput.value) return alert('请先设置该针日期');
+
+        const daysStr = prompt(`第${index+1}针推迟几天？\n(注意：后续针剂也会自动顺延以保持间隔)`, "7");
+        const days = parseInt(daysStr);
+        
+        if(!isNaN(days) && days !== 0) {
+            // 从当前针开始，往后所有针都推迟相同天数
+            for (let i = index; i < 3; i++) {
+                const input = document.getElementById(ids[i]);
+                if(input.value) {
+                    const d = new Date(input.value);
+                    d.setDate(d.getDate() + days);
+                    input.value = d.toISOString().split('T')[0];
+                }
+            }
+            saveReminders();
+            alert(`已推迟计划 📅`);
+        }
+    }
+
+    // 驱虫推迟逻辑
+    function delayDeworm() {
+        const input = document.getElementById('lastDewormDate');
+        if(!input.value) return alert('请先设置上次日期');
+
+        const days = prompt("因病推迟：请输入推迟的天数", "7");
+        if(days && !isNaN(days)) {
+            const date = new Date(input.value);
+            date.setDate(date.getDate() + parseInt(days));
+            input.value = date.toISOString().split('T')[0];
+            saveReminders();
+            alert(`已推迟 ${days} 天，新的日期为 ${input.value}`);
+        }
+    }
+
+    function checkReminders(data) {
+        const banner = document.getElementById('reminderBanner');
+        let msgs = [];
+        const now = new Date();
+        now.setHours(0,0,0,0); 
+
+        // 辅助函数：检查单个日期
+        const checkDate = (targetDateStr, label) => {
+            if(!targetDateStr) return;
+            const target = new Date(targetDateStr);
+            target.setHours(0,0,0,0);
+            const diffTime = target - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if(diffDays === 1) msgs.push(`🔔 明天${label}`);
+            else if (diffDays === 0) msgs.push(`🚨 今天${label}！`);
+            else if (diffDays < 0) msgs.push(`⚠️ ${label}超期 ${Math.abs(diffDays)} 天`);
+        };
+
+        // 1. 检查核心疫苗 (3针)
+        if(data.vaccine && data.vaccine.dates) {
+            data.vaccine.dates.forEach((date, idx) => {
+                // 只检查未来的或最近过期的，避免显示太久以前的
+                checkDate(date, `第${idx+1}针疫苗`);
+            });
+        }
+
+        // 2. 检查狂犬
+        if(data.rabies && data.rabies.date) {
+            checkDate(data.rabies.date, '狂犬疫苗');
+        }
+
+        // 3. 检查驱虫 (循环)
+        if(data.deworm && data.deworm.date && data.deworm.cycle) {
+            const last = new Date(data.deworm.date);
+            const next = new Date(last);
+            next.setDate(last.getDate() + parseInt(data.deworm.cycle));
+            checkDate(next.toISOString().split('T')[0], '驱虫');
+        }
+
+        // 过滤掉重复信息并显示
+        // 简单去重逻辑：如果有多条，只显示最近的一条或全部显示
+        // 这里为了不让横幅太长，我们只显示最紧急的一条 (超期 > 今天 > 明天)
+        // 或者全部显示，用 | 分隔
+        if(msgs.length > 0) {
+            // 排序优先级：超期 -> 今天 -> 明天
+            msgs.sort((a, b) => {
+                const score = (str) => str.includes('超期') ? 0 : (str.includes('今天') ? 1 : 2);
+                return score(a) - score(b);
+            });
+            // 取前两条显示，避免太长
+            banner.innerHTML = msgs.slice(0, 2).join(' &nbsp;|&nbsp; ');
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    // --- 一键复制昨天 ---
+    function copyYesterday() {
+        const todayInput = document.getElementById('dateInput').value;
+        if(!todayInput) return;
+        
+        const today = new Date(todayInput);
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yStr = yesterday.toISOString().split('T')[0];
+
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const yLog = logs.find(l => l.dateStr === yStr);
+
+        if(!yLog) {
+            alert(`没有找到昨天 (${yStr}) 的记录哦 😿`);
+            return;
+        }
+
+        if(confirm(`确定要复制昨天 (${yStr}) 的体重、状态和用药记录吗？\n(当前已填写的将会被覆盖)`)) {
+            if(yLog.weight) document.getElementById('weight').value = yLog.weight;
+            const setRadio = (n, v) => { 
+                if(v) document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.checked = r.value === v); 
+            };
+            setRadio('stool', yLog.stool);
+            setRadio('mental', yLog.mental);
+            setRadio('appetite', yLog.appetite);
+
+            ['morning', 'noon', 'evening'].forEach(time => {
+                const cid = `med-${time}`;
+                document.querySelector(`#${cid} .dynamic-list`).innerHTML = '';
+                if (yLog.meds && yLog.meds[time]) {
+                    yLog.meds[time].forEach(m => {
+                        let qty = '', unit = 'ml';
+                        if (m.spec) {
+                            const unitRegex = /^(.*?)(ml|管|粒|颗|片|包)$/;
+                            const match = m.spec.match(unitRegex);
+                            if (match) {
+                                qty = match[1];
+                                unit = match[2];
+                            } else {
+                                const numMatch = m.spec.match(/^(\d*\.?\d+)(.*)$/);
+                                if (numMatch && numMatch[1]) {
+                                    qty = numMatch[1];
+                                    unit = numMatch[2];
+                                } else {
+                                    qty = m.spec;
+                                }
+                            }
+                        }
+                        addMedRow(cid, m.name, qty, unit);
+                    });
+                }
+            });
+            showToast("已复制昨天记录! 📋");
+        }
+    }
+
+    // --- 图表渲染 ---
+    function renderCharts() {
+        const ctxWeight = document.getElementById('weightChart').getContext('2d');
+        const ctxTemp = document.getElementById('tempChart').getContext('2d');
+        
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        logs.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+        logs = logs.slice(-14);
+
+        const labels = logs.map(l => l.dateStr.slice(5));
+        const weights = logs.map(l => l.weight || null);
+        const temps = logs.map(l => {
+            if(l.temps && l.temps.length) return Math.max(...l.temps.map(t => parseFloat(t.val)));
+            if(l.temp) return parseFloat(l.temp);
+            return null;
+        });
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const gridColor = isDark ? '#444' : '#eee';
+        const textColor = isDark ? '#aaa' : '#666';
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor } }
+            },
+            plugins: { legend: { labels: { color: textColor } } }
+        };
+
+        if(weightChartInstance) weightChartInstance.destroy();
+        if(tempChartInstance) tempChartInstance.destroy();
+
+        weightChartInstance = new Chart(ctxWeight, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '体重 (kg)',
+                    data: weights,
+                    borderColor: '#FF9A9E',
+                    backgroundColor: 'rgba(255, 154, 158, 0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: commonOptions
+        });
+
+        tempChartInstance = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '最高体温 (℃)',
+                    data: temps,
+                    borderColor: '#a18cd1',
+                    backgroundColor: 'rgba(161, 140, 209, 0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: commonOptions
+        });
+    }
+
+    // --- 基础逻辑 ---
     function initDate() {
         const now = new Date();
-        // 格式化为 YYYY-MM-DD 适配 input type="date"
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const todayStr = `${year}-${month}-${day}`;
-        
-        const dateInput = document.getElementById('dateInput');
-        dateInput.value = todayStr;
+        document.getElementById('dateInput').value = todayStr;
         updateWeekday();
+        checkLogForDate(todayStr);
     }
 
-    // 更新星期显示
+    function onDateChange() {
+        updateWeekday();
+        const dateStr = document.getElementById('dateInput').value;
+        if(dateStr) checkLogForDate(dateStr);
+    }
+
     function updateWeekday() {
         const dateInput = document.getElementById('dateInput');
         const display = document.getElementById('weekdayDisplay');
-        
-        if (!dateInput.value) {
-            display.textContent = '';
-            return;
-        }
-
-        const date = new Date(dateInput.value);
+        if (!dateInput.value) { display.textContent = ''; return; }
+        const parts = dateInput.value.split('-');
+        const date = new Date(parts[0], parts[1] - 1, parts[2]); 
         const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
         display.textContent = days[date.getDay()];
     }
 
-    // 添加药品行
-    function addMedRow(containerId, name = '', spec = '') {
-        const container = document.querySelector(`#${containerId} .med-list`);
+    function checkLogForDate(dateStr) {
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const existingLog = logs.find(l => l.dateStr === dateStr);
+        if (existingLog) {
+            editLog(existingLog.id, false);
+            showToast("已加载该日记录 📖");
+        } else {
+            resetForm(false);
+        }
+    }
+
+    function updateMedDatalist() {
+        const history = JSON.parse(localStorage.getItem('medHistory') || '[]');
+        const datalist = document.getElementById('med-history-list');
+        datalist.innerHTML = '';
+        history.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            datalist.appendChild(option);
+        });
+    }
+
+    function saveMedToHistory(name, qty, unit) {
+        if(!name) return;
+        let history = JSON.parse(localStorage.getItem('medHistory') || '[]');
+        if (!history.includes(name)) {
+            history.push(name);
+            localStorage.setItem('medHistory', JSON.stringify(history));
+            updateMedDatalist();
+        }
+        let lastSpecs = JSON.parse(localStorage.getItem('medLastSpecs') || '{}');
+        lastSpecs[name] = { qty: qty, unit: unit };
+        localStorage.setItem('medLastSpecs', JSON.stringify(lastSpecs));
+    }
+
+    function autoFillSpec(input) {
+        const name = input.value;
+        const lastSpecs = JSON.parse(localStorage.getItem('medLastSpecs') || '{}');
+        if (lastSpecs[name]) {
+            const row = input.parentElement;
+            const qtyInput = row.querySelector('.row-qty');
+            const unitInput = row.querySelector('.row-unit');
+            if (qtyInput && unitInput) {
+                qtyInput.value = lastSpecs[name].qty || '';
+                unitInput.value = lastSpecs[name].unit || 'ml';
+            }
+        }
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+    function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
+    function drag(ev) { draggedItem = ev.target.closest('.dynamic-row'); ev.dataTransfer.effectAllowed = "move"; }
+    function drop(ev) {
+        ev.preventDefault();
+        const section = ev.currentTarget;
+        section.classList.remove('drag-over');
+        const list = section.querySelector('.dynamic-list');
+        if (draggedItem && list) { list.appendChild(draggedItem); draggedItem = null; }
+    }
+
+    let touchClone = null, touchSrcItem = null, touchOffsetX = 0, touchOffsetY = 0;
+    function initTouchDrag(handle) {
+        handle.addEventListener('touchstart', handleTouchStart, {passive: false});
+        handle.addEventListener('touchmove', handleTouchMove, {passive: false});
+        handle.addEventListener('touchend', handleTouchEnd);
+    }
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        touchSrcItem = e.target.closest('.dynamic-row');
+        touchClone = touchSrcItem.cloneNode(true);
+        touchClone.classList.add('dragging-clone');
+        const rect = touchSrcItem.getBoundingClientRect();
+        touchOffsetX = touch.clientX - rect.left;
+        touchOffsetY = touch.clientY - rect.top;
+        touchClone.style.left = (rect.left) + 'px';
+        touchClone.style.top = (rect.top) + 'px';
+        touchClone.style.width = rect.width + 'px';
+        document.body.appendChild(touchClone);
+        touchSrcItem.style.opacity = '0.3';
+    }
+    function handleTouchMove(e) {
+        if (!touchClone) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+        touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+        document.querySelectorAll('.med-section').forEach(sec => sec.classList.remove('drag-over'));
+        touchClone.style.display = 'none';
+        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        touchClone.style.display = 'block';
+        if (elemBelow) {
+            const section = elemBelow.closest('.med-section');
+            if (section) section.classList.add('drag-over');
+        }
+    }
+    function handleTouchEnd(e) {
+        if (!touchClone) return;
+        const touch = e.changedTouches[0];
+        touchClone.style.display = 'none';
+        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const section = elemBelow ? elemBelow.closest('.med-section') : null;
+        if (section) {
+            const list = section.querySelector('.dynamic-list');
+            list.appendChild(touchSrcItem);
+            section.classList.remove('drag-over');
+        }
+        document.body.removeChild(touchClone);
+        touchSrcItem.style.opacity = '1';
+        touchClone = null; touchSrcItem = null;
+    }
+
+    function addTempRow(time = '', val = '') {
+        const container = document.getElementById('temp-list');
         const div = document.createElement('div');
-        div.className = 'med-row';
+        div.className = 'dynamic-row';
+        if (!time) {
+            const now = new Date();
+            time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        }
         div.innerHTML = `
-            <input type="text" class="med-name" placeholder="药品名称" value="${name}">
-            <input type="text" class="med-spec" placeholder="规格(如:1粒)" value="${spec}">
-            <button type="button" class="btn-icon btn-copy" onclick="duplicateRow(this)" title="复制此行">📋</button>
-            <button type="button" class="btn-icon btn-del" onclick="deleteRow(this)" title="删除">✖️</button>
+            <input type="time" class="row-time" value="${time}">
+            <input type="number" step="0.1" class="row-val" placeholder="℃" value="${val}">
+            <button type="button" class="btn-icon btn-del" onclick="this.parentElement.remove()">✖️</button>
         `;
         container.appendChild(div);
     }
 
-    // 删除药品行
-    function deleteRow(btn) {
-        btn.parentElement.remove();
+    function addMedRow(containerId, name = '', qty = '', unit = 'ml') {
+        const container = document.querySelector(`#${containerId} .dynamic-list`);
+        const div = document.createElement('div');
+        div.className = 'dynamic-row';
+        div.draggable = true;
+        div.ondragstart = drag;
+        div.innerHTML = `
+            <span class="drag-handle">⋮⋮</span>
+            <input type="text" class="row-name" list="med-history-list" placeholder="药品名称" value="${name}" oninput="autoFillSpec(this)">
+            <input type="text" class="row-qty" placeholder="量" value="${qty}">
+            <select class="row-unit">
+                <option value="ml" ${unit==='ml'?'selected':''}>ml</option>
+                <option value="管" ${unit==='管'?'selected':''}>管</option>
+                <option value="粒" ${unit==='粒'?'selected':''}>粒</option>
+                <option value="颗" ${unit==='颗'?'selected':''}>颗</option>
+                <option value="片" ${unit==='片'?'selected':''}>片</option>
+                <option value="包" ${unit==='包'?'selected':''}>包</option>
+            </select>
+            <button type="button" class="btn-icon btn-copy" onclick="duplicateMedRow(this)">📋</button>
+            <button type="button" class="btn-icon btn-del" onclick="this.parentElement.remove()">✖️</button>
+        `;
+        container.appendChild(div);
+        initTouchDrag(div.querySelector('.drag-handle'));
     }
 
-    // 复制药品行
-    function duplicateRow(btn) {
+    function duplicateMedRow(btn) {
         const row = btn.parentElement;
-        const name = row.querySelector('.med-name').value;
-        const spec = row.querySelector('.med-spec').value;
-        const containerId = row.parentElement.parentElement.id;
-        addMedRow(containerId, name, spec);
+        const name = row.querySelector('.row-name').value;
+        const qty = row.querySelector('.row-qty').value;
+        const unit = row.querySelector('.row-unit').value;
+        const containerId = row.closest('.med-section').id;
+        addMedRow(containerId, name, qty, unit);
     }
 
-    // 获取单选按钮的值
     function getRadioValue(name) {
         const el = document.querySelector(`input[name="${name}"]:checked`);
         return el ? el.value : '';
     }
-
-    // 设置单选按钮的值
-    function setRadioValue(name, value) {
-        const radios = document.querySelectorAll(`input[name="${name}"]`);
-        radios.forEach(radio => {
-            radio.checked = (radio.value === value);
-        });
+    function getCheckboxValues(name) {
+        const els = document.querySelectorAll(`input[name="${name}"]:checked`);
+        return Array.from(els).map(el => el.value);
+    }
+    function getTempData() {
+        const rows = document.querySelectorAll('#temp-list .dynamic-row');
+        return Array.from(rows).map(row => ({
+            time: row.querySelector('.row-time').value,
+            val: row.querySelector('.row-val').value
+        })).filter(item => item.val);
+    }
+    function getMedData(containerId) {
+        const rows = document.querySelectorAll(`#${containerId} .dynamic-row`);
+        return Array.from(rows).map(row => {
+            const name = row.querySelector('.row-name').value.trim();
+            const qty = row.querySelector('.row-qty').value.trim();
+            const unit = row.querySelector('.row-unit').value;
+            if(name) saveMedToHistory(name, qty, unit);
+            const specStr = (qty && unit) ? `${qty}${unit}` : (qty || unit || '');
+            return { name, spec: specStr };
+        }).filter(item => item.name);
     }
 
-    // 收集药品数据
-    function getMeds(containerId) {
-        const rows = document.querySelectorAll(`#${containerId} .med-row`);
-        const meds = [];
-        rows.forEach(row => {
-            const name = row.querySelector('.med-name').value.trim();
-            const spec = row.querySelector('.med-spec').value.trim();
-            if (name) {
-                meds.push({ name, spec });
-            }
-        });
-        return meds;
-    }
-
-    // 保存记录
     function saveLog() {
         const dateInput = document.getElementById('dateInput').value;
-        const weekday = document.getElementById('weekdayDisplay').textContent;
-        
-        if (!dateInput) {
-            alert("请选择日期！");
-            return;
-        }
+        if (!dateInput) { alert("请选择日期！"); return; }
 
         const logData = {
-            id: currentEditId ? currentEditId : Date.now(), // 如果是编辑，保持原ID
+            id: currentEditId ? currentEditId : Date.now(),
             dateStr: dateInput,
-            weekday: weekday,
-            temp: document.getElementById('temperature').value,
+            weekday: document.getElementById('weekdayDisplay').textContent,
             weight: document.getElementById('weight').value,
+            temps: getTempData(),
             stool: getRadioValue('stool'),
             mental: getRadioValue('mental'),
             appetite: getRadioValue('appetite'),
+            appetiteTrend: getCheckboxValues('appetite_trend'),
+            special: document.getElementById('special').value,
             meds: {
-                morning: getMeds('med-morning'),
-                noon: getMeds('med-noon'),
-                evening: getMeds('med-evening')
+                morning: getMedData('med-morning'),
+                noon: getMedData('med-noon'),
+                evening: getMedData('med-evening')
             }
         };
 
         let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
-
-        if (currentEditId) {
-            // 编辑模式：找到原记录并替换
-            const index = logs.findIndex(l => l.id === currentEditId);
-            if (index !== -1) {
-                logs[index] = logData;
-                showToast("修改已保存! 📝");
-            }
+        const existingIndex = logs.findIndex(l => l.id === logData.id);
+        
+        if (existingIndex !== -1) {
+            logs[existingIndex] = logData;
+            showToast("修改已保存! 📝");
         } else {
-            // 新增模式：添加到开头
-            logs.unshift(logData);
-            showToast("记录已保存! 🐾");
+            const dateConflictIndex = logs.findIndex(l => l.dateStr === logData.dateStr);
+            if (dateConflictIndex !== -1) {
+                if(confirm("该日期已有记录，是否覆盖？")) {
+                    logs[dateConflictIndex] = logData;
+                    showToast("记录已覆盖! 📝");
+                } else { return; }
+            } else {
+                logs.unshift(logData);
+                showToast("记录已保存! 🐾");
+            }
         }
 
         localStorage.setItem('petLogs', JSON.stringify(logs));
-        
-        resetForm();
-        renderHistory();
-    }
-
-    // 编辑记录：回填表单
-    function editLog(id) {
-        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
-        const log = logs.find(l => l.id === id);
-        
-        if (!log) return;
-
-        // 滚动到顶部
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // 设置编辑状态
-        currentEditId = log.id;
+        currentEditId = logData.id;
         document.getElementById('saveBtn').textContent = "💾 更新记录";
         document.getElementById('cancelBtn').style.display = "block";
+        applyFilter(); 
+        if(document.getElementById('tab-stats').classList.contains('active')) renderCharts();
+    }
 
-        // 回填基础数据
-        document.getElementById('dateInput').value = log.dateStr;
-        updateWeekday(); // 刷新星期
-        document.getElementById('temperature').value = log.temp;
-        document.getElementById('weight').value = log.weight;
+    function toggleFilterInputs() {
+        const type = document.getElementById('filterType').value;
+        document.getElementById('filterDate').style.display = type === 'date' ? 'block' : 'none';
+        document.getElementById('filterWeek').style.display = type === 'week' ? 'block' : 'none';
+        document.getElementById('filterMonth').style.display = type === 'month' ? 'block' : 'none';
+        if (type === 'all') applyFilter();
+    }
 
-        // 回填单选框
-        setRadioValue('stool', log.stool);
-        setRadioValue('mental', log.mental);
-        setRadioValue('appetite', log.appetite);
+    function applyFilter() {
+        const type = document.getElementById('filterType').value;
+        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        let filteredLogs = logs;
 
-        // 回填药品 (先清空，再添加)
-        ['morning', 'noon', 'evening'].forEach(time => {
-            const containerId = `med-${time}`;
-            document.querySelector(`#${containerId} .med-list`).innerHTML = '';
-            if (log.meds && log.meds[time]) {
-                log.meds[time].forEach(med => {
-                    addMedRow(containerId, med.name, med.spec);
+        if (type === 'date') {
+            const val = document.getElementById('filterDate').value;
+            if(val) filteredLogs = logs.filter(l => l.dateStr === val);
+        } else if (type === 'month') {
+            const val = document.getElementById('filterMonth').value;
+            if(val) filteredLogs = logs.filter(l => l.dateStr.startsWith(val));
+        } else if (type === 'week') {
+            const val = document.getElementById('filterWeek').value;
+            if(val) {
+                const [year, week] = val.split('-W');
+                const simpleDate = new Date(year, 0, 1 + (week - 1) * 7);
+                const dayOfWeek = simpleDate.getDay();
+                const isoWeekStart = simpleDate;
+                if (dayOfWeek <= 4) isoWeekStart.setDate(simpleDate.getDate() - simpleDate.getDay() + 1);
+                else isoWeekStart.setDate(simpleDate.getDate() + 8 - simpleDate.getDay());
+                const monday = new Date(isoWeekStart);
+                const sunday = new Date(isoWeekStart);
+                sunday.setDate(monday.getDate() + 6);
+                filteredLogs = logs.filter(l => {
+                    const d = new Date(l.dateStr);
+                    return d >= monday && d <= sunday;
                 });
             }
-        });
+        }
+        renderHistory(filteredLogs);
     }
 
-    // 重置表单
-    function resetForm() {
-        document.getElementById('petForm').reset();
-        
-        // 清空药品列表
-        document.querySelectorAll('.med-list').forEach(el => el.innerHTML = '');
-        
-        // 恢复日期为今天
-        initDate();
-        
-        // 重置编辑状态
-        currentEditId = null;
-        document.getElementById('saveBtn').textContent = "💾 保存记录";
-        document.getElementById('cancelBtn').style.display = "none";
-    }
-
-    // 渲染历史记录
-    function renderHistory() {
+    function renderHistory(logsToRender) {
         const container = document.getElementById('historyList');
-        // 按日期排序（新的在前）
-        let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        let logs = logsToRender || JSON.parse(localStorage.getItem('petLogs') || '[]');
         logs.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
-        
         container.innerHTML = '';
 
         if (logs.length === 0) {
-            container.innerHTML = '<p style="text-align:center;color:#999;">暂无记录，快来添加第一条吧！🐱</p>';
+            container.innerHTML = '<p style="text-align:center;color:#999;">暂无符合条件的记录 🐱</p>';
             return;
         }
 
-        logs.forEach((log) => {
-            // 状态标签颜色逻辑
-            const getTagClass = (val, type) => {
-                if (!val) return '';
-                if (type === 'stool') {
-                    if (val === '正常') return 'tag-good';
-                    if (val === '无便') return 'tag-neutral';
-                    return 'tag-bad';
-                }
-                if (type === 'mental') return val === '良好' ? 'tag-good' : (val === '一般' ? 'tag-warn' : 'tag-bad');
-                if (type === 'appetite') return val === '正常' || val === '多食' ? 'tag-good' : 'tag-bad';
-                return '';
+        logs.forEach(log => {
+            let tempHtml = '';
+            if (Array.isArray(log.temps) && log.temps.length > 0) {
+                const tempList = log.temps.map(t => `<div>🕒 ${t.time} &nbsp; 🌡️ <b>${t.val}℃</b></div>`).join('');
+                tempHtml = `<details><summary>体温记录 (${log.temps.length}次)</summary><div class="details-content">${tempList}</div></details>`;
+            } else if (log.temp) {
+                tempHtml = `<div>🌡️ ${log.temp}℃</div>`;
+            }
+
+            let medHtml = '';
+            const hasMeds = log.meds && (log.meds.morning?.length || log.meds.noon?.length || log.meds.evening?.length);
+            if (hasMeds) {
+                const buildList = (arr, label) => {
+                    if(!arr || !arr.length) return '';
+                    return `<div style="margin-bottom:4px;"><b>${label}:</b> ${arr.map(m=>`${m.name}${m.spec?'('+m.spec+')':''}`).join('、')}</div>`;
+                };
+                const content = buildList(log.meds.morning, '早') + buildList(log.meds.noon, '中') + buildList(log.meds.evening, '晚');
+                medHtml = `<details><summary>💊 用药详情</summary><div class="details-content">${content}</div></details>`;
+            }
+
+            const getTag = (val, type) => {
+                if(!val) return '';
+                let cls = 'tag-neutral';
+                let icon = '';
+                let suffix = '';
+                if(type === 'stool') { icon = '💩'; cls = val==='正常'?'tag-good':(val==='无便'?'tag-neutral':'tag-bad'); }
+                if(type === 'mental') { icon = '🧠'; cls = val==='良好'?'tag-good':(val==='一般'?'tag-warn':'tag-bad'); if(val==='良好') suffix='☀️'; if(val==='一般') suffix='☁️'; if(val==='不佳') suffix='🌧️'; }
+                if(type === 'appetite') { icon = '🍖'; cls = (val==='正常'||val==='多食')?'tag-good':'tag-bad'; if(val==='多食') suffix='🍗'; if(val==='正常') suffix='🦴'; if(val==='不佳') suffix='🥣'; }
+                return `<span class="tag ${cls}">${icon} ${val} ${suffix}</span>`;
             };
 
-            // 构建药品HTML
-            const buildMedHtml = (meds, time) => {
-                if (!meds || meds.length === 0) return '';
-                const list = meds.map(m => `${m.name} ${m.spec ? `(${m.spec})` : ''}`).join('、');
-                return `<div><small><b>${time}:</b> ${list}</small></div>`;
-            };
-
-            // 检查是否有药品记录
-            const hasMeds = log.meds && (
-                (log.meds.morning && log.meds.morning.length > 0) || 
-                (log.meds.noon && log.meds.noon.length > 0) || 
-                (log.meds.evening && log.meds.evening.length > 0)
-            );
+            let trendHtml = '';
+            if (log.appetiteTrend && log.appetiteTrend.length) {
+                trendHtml = log.appetiteTrend.map(t => `<span class="tag tag-trend">${t}</span>`).join(' ');
+            }
 
             const html = `
                 <div class="history-item">
                     <div class="history-header">
-                        <div class="history-date">
-                            ${log.dateStr} <small style="font-weight:normal;color:#888">${log.weekday}</small>
-                        </div>
+                        <div class="history-date">${log.dateStr} <small style="opacity:0.7">${log.weekday}</small></div>
                         <div class="history-actions">
-                            <span class="btn-edit-log" onclick="editLog(${log.id})">✏️ 编辑</span>
-                            <span class="btn-del-log" onclick="deleteLog(${log.id})">🗑️ 删除</span>
+                            <span style="color:#2196F3; cursor:pointer;" onclick="editLog(${log.id}, true)">✏️</span>
+                            <span style="color:#FF5252; cursor:pointer; margin-left:10px;" onclick="deleteLog(${log.id})">🗑️</span>
                         </div>
                     </div>
                     <div class="history-content">
-                        ${(log.temp || log.weight) ? `
-                        <div style="margin-bottom:8px;">
-                            ${log.temp ? `🌡️ ${log.temp}℃` : ''} 
-                            ${log.weight ? `&nbsp;&nbsp;⚖️ ${log.weight}kg` : ''}
-                        </div>` : ''}
-                        
-                        ${(log.stool || log.mental || log.appetite) ? `
-                        <div style="margin-bottom:8px;">
-                            ${log.stool ? `<span class="tag ${getTagClass(log.stool, 'stool')}">💩 ${log.stool}</span>` : ''}
-                            ${log.mental ? `<span class="tag ${getTagClass(log.mental, 'mental')}">🧠 ${log.mental}</span>` : ''}
-                            ${log.appetite ? `<span class="tag ${getTagClass(log.appetite, 'appetite')}">🍖 ${log.appetite}</span>` : ''}
-                        </div>` : ''}
-
-                        ${hasMeds ? `
-                        <div style="background:#f9f9f9; padding:8px; border-radius:8px;">
-                            ${buildMedHtml(log.meds.morning, '早')}
-                            ${buildMedHtml(log.meds.noon, '中')}
-                            ${buildMedHtml(log.meds.evening, '晚')}
-                        </div>` : ''}
+                        ${log.weight ? `<div>⚖️ <b>${log.weight}kg</b></div>` : ''}
+                        ${tempHtml}
+                        <div style="margin: 8px 0;">
+                            ${getTag(log.stool, 'stool')}
+                            ${getTag(log.mental, 'mental')}
+                            ${getTag(log.appetite, 'appetite')}
+                            ${trendHtml}
+                        </div>
+                        ${log.special ? `<div style="background:rgba(255,0,0,0.05);padding:5px;border-radius:4px;color:#d45d79;font-size:0.9rem;margin-bottom:5px;">📝 ${log.special}</div>` : ''}
+                        ${medHtml}
                     </div>
                 </div>
             `;
@@ -734,39 +1305,147 @@
         });
     }
 
-    // 删除单条记录
+    function editLog(id, scroll = true) {
+        switchTab('tab-record', document.querySelector('.nav-item:first-child'));
+        const logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
+        const log = logs.find(l => l.id === id);
+        if (!log) return;
+        if(scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        currentEditId = log.id;
+        document.getElementById('saveBtn').textContent = "💾 更新记录";
+        document.getElementById('cancelBtn').style.display = "block";
+
+        document.getElementById('dateInput').value = log.dateStr;
+        updateWeekday();
+        document.getElementById('weight').value = log.weight;
+        document.getElementById('special').value = log.special || '';
+
+        document.getElementById('temp-list').innerHTML = '';
+        if (Array.isArray(log.temps)) {
+            log.temps.forEach(t => addTempRow(t.time, t.val));
+        } else if (log.temp) {
+            addTempRow('', log.temp);
+        }
+
+        const setRadio = (n, v) => { document.querySelectorAll(`input[name="${n}"]`).forEach(r => r.checked = r.value === v); };
+        setRadio('stool', log.stool);
+        setRadio('mental', log.mental);
+        setRadio('appetite', log.appetite);
+        
+        document.querySelectorAll('input[name="appetite_trend"]').forEach(cb => cb.checked = false);
+        if (log.appetiteTrend) {
+            log.appetiteTrend.forEach(val => {
+                const cb = document.querySelector(`input[name="appetite_trend"][value="${val}"]`);
+                if(cb) cb.checked = true;
+            });
+        }
+
+        ['morning', 'noon', 'evening'].forEach(time => {
+            const cid = `med-${time}`;
+            document.querySelector(`#${cid} .dynamic-list`).innerHTML = '';
+            if (log.meds && log.meds[time]) {
+                log.meds[time].forEach(m => {
+                    let qty = '', unit = 'ml';
+                    if (m.spec) {
+                        const unitRegex = /^(.*?)(ml|管|粒|颗|片|包)$/;
+                        const match = m.spec.match(unitRegex);
+                        if (match) {
+                            qty = match[1];
+                            unit = match[2];
+                        } else {
+                            const numMatch = m.spec.match(/^(\d*\.?\d+)(.*)$/);
+                            if (numMatch && numMatch[1]) {
+                                qty = numMatch[1];
+                                unit = numMatch[2];
+                            } else {
+                                qty = m.spec;
+                            }
+                        }
+                    }
+                    addMedRow(cid, m.name, qty, unit);
+                });
+            }
+        });
+    }
+
     function deleteLog(id) {
-        if(confirm('确定要删除这条记录吗？')) {
+        if(confirm('确定删除？')) {
             let logs = JSON.parse(localStorage.getItem('petLogs') || '[]');
             logs = logs.filter(l => l.id !== id);
             localStorage.setItem('petLogs', JSON.stringify(logs));
-            
-            // 如果正在编辑被删除的条目，重置表单
-            if (currentEditId === id) {
-                resetForm();
-            }
-            
-            renderHistory();
+            if (currentEditId === id) resetForm(true);
+            applyFilter();
+            if(document.getElementById('tab-stats').classList.contains('active')) renderCharts();
         }
     }
 
-    // 显示提示
-    function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.style.display = 'block';
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 2000);
+    function resetForm(resetDate = true) {
+        const currentDate = document.getElementById('dateInput').value;
+        document.getElementById('petForm').reset();
+        document.querySelectorAll('.dynamic-list').forEach(el => el.innerHTML = '');
+        if (resetDate) { initDate(); } 
+        else { document.getElementById('dateInput').value = currentDate; updateWeekday(); }
+        currentEditId = null;
+        document.getElementById('saveBtn').textContent = "💾 保存记录";
+        document.getElementById('cancelBtn').style.display = "none";
     }
 
-    // 页面加载执行
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+    }
+
+    function exportData() {
+        const logs = localStorage.getItem('petLogs') || '[]';
+        const history = localStorage.getItem('medHistory') || '[]';
+        const specs = localStorage.getItem('medLastSpecs') || '{}';
+        const reminders = localStorage.getItem('petReminders') || '{}';
+        const data = { 
+            logs: JSON.parse(logs), 
+            medHistory: JSON.parse(history), 
+            medLastSpecs: JSON.parse(specs),
+            reminders: JSON.parse(reminders),
+            exportDate: new Date().toISOString() 
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pet_diary_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importData(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (!confirm('⚠️ 恢复备份将覆盖当前所有记录，确定要继续吗？')) { input.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.logs) localStorage.setItem('petLogs', JSON.stringify(data.logs));
+                if (data.medHistory) localStorage.setItem('medHistory', JSON.stringify(data.medHistory));
+                if (data.medLastSpecs) localStorage.setItem('medLastSpecs', JSON.stringify(data.medLastSpecs));
+                if (data.reminders) localStorage.setItem('petReminders', JSON.stringify(data.reminders));
+                showToast("备份恢复成功! 🎉");
+                setTimeout(() => location.reload(), 1000);
+            } catch (err) { alert('文件格式错误，无法恢复！'); }
+        };
+        reader.readAsText(file);
+    }
+
     window.onload = function() {
+        initTheme();
         initDate();
-        renderHistory();
+        updateMedDatalist();
+        applyFilter();
+        loadReminders();
     };
-
 </script>
-
 </body>
 </html>
